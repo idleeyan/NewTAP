@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad128" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="strokeGrad128" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="24" fill="url(#bgGrad128)"/>
+  <g transform="translate(16, 16)">
+    <rect x="0" y="0" width="44" height="44" rx="8" fill="none" stroke="url(#strokeGrad128)" stroke-width="2.5"/>
+    <line x1="8" y1="12" x2="36" y2="12" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+    <line x1="8" y1="20" x2="28" y2="20" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    <rect x="52" y="0" width="44" height="44" rx="8" fill="none" stroke="url(#strokeGrad128)" stroke-width="2.5"/>
+    <line x1="60" y1="12" x2="88" y2="12" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+    <line x1="60" y1="20" x2="80" y2="20" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    <rect x="0" y="52" width="44" height="44" rx="8" fill="none" stroke="url(#strokeGrad128)" stroke-width="2.5"/>
+    <line x1="8" y1="64" x2="36" y2="64" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+    <line x1="8" y1="72" x2="28" y2="72" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    <rect x="52" y="52" width="44" height="44" rx="8" fill="none" stroke="url(#strokeGrad128)" stroke-width="2.5"/>
+    <line x1="60" y1="64" x2="88" y2="64" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+    <line x1="60" y1="72" x2="80" y2="72" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    <path d="M 84 88 L 84 78 L 96 78 L 96 88 L 90 84 Z" fill="#667eea"/>
+  </g>
+</svg>

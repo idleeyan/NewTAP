@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SVG to PNG Converter</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #1a1a2e; color: white; }
+    .status { margin: 10px 0; }
+    .success { color: #4caf50; }
+  </style>
+</head>
+<body>
+  <h2>SVG to PNG 转换器</h2>
+  <div id="status"></div>
+  <canvas id="canvas"></canvas>
+  
+  <script>
+    const sizes = [16, 48, 128];
+    const statusDiv = document.getElementById('status');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    function log(msg, isSuccess) {
+      const div = document.createElement('div');
+      div.className = 'status ' + (isSuccess ? 'success' : '');
+      div.textContent = msg;
+      statusDiv.appendChild(div);
+    }
+    
+    async function convertSVG(size) {
+      try {
+        const svgPath = 'icon' + size + '.svg';
+        const response = await fetch(svgPath);
+        let svgText = await response.text();
+        
+        // 确保SVG有正确的命名空间
+        if (!svgText.includes('xmlns=')) {
+          svgText = svgText.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+        }
+        
+        // 创建Blob和URL
+        const blob = new Blob([svgText], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        
+        // 创建图片
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = url;
+        });
+        
+        // 绘制到canvas
+        canvas.width = size;
+        canvas.height = size;
+        ctx.clearRect(0, 0, size, size);
+        ctx.drawImage(img, 0, 0, size, size);
+        
+        // 转换为PNG data URL
+        const pngDataUrl = canvas.toDataURL('image/png');
+        
+        // 保存文件（通过创建下载链接）
+        const link = document.createElement('a');
+        link.download = 'icon' + size + '.png';
+        link.href = pngDataUrl;
+        link.click();
+        
+        URL.revokeObjectURL(url);
+        
+        log('✓ 已生成: icon' + size + '.png (' + size + 'x' + size + ')', true);
+      } catch (err) {
+        log('✗ 失败: icon' + size + '.png - ' + err.message, false);
+      }
+    }
+    
+    async function main() {
+      log('开始转换...');
+      for (const size of sizes) {
+        await convertSVG(size);
+        await new Promise(r => setTimeout(r, 100));
+      }
+      log('');
+      log('转换完成！', true);
+    }
+    
+    main();
+  </script>
+</body>
+</html>
+  

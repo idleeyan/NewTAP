@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新标签页扩展 - LOGO设计方案</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 50px;
+            font-size: 1.1rem;
+        }
+        
+        .logo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+            margin-bottom: 50px;
+        }
+        
+        .logo-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 24px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .logo-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.2);
+        }
+        
+        .logo-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        
+        .logo-preview {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .logo-preview svg {
+            width: 200px;
+            height: 200px;
+            filter: drop-shadow(0 10px 30px rgba(0,0,0,0.3));
+        }
+        
+        .logo-description {
+            color: rgba(255,255,255,0.7);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+        
+        .size-demo {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .size-item {
+            text-align: center;
+        }
+        
+        .size-item svg {
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));
+        }
+        
+        .size-label {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 8px;
+        }
+        
+        .download-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .download-section h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .download-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+        }
+        
+        .feature-icon {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>新标签页扩展 LOGO 设计方案</h1>
+        <p class="subtitle">书签/门户风格 · 简约线条设计 · 铺满图标范围</p>
+        
+        <div class="logo-grid">
+            <!-- 方案1: 书签卡片网格 -->
+            <div class="logo-card">
+                <div class="logo-title">
+                    <span class="logo-number">1</span>
+                    书签卡片网格
+                </div>
+                <div class="logo-preview">
+                    <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                            </linearGradient>
+                            <filter id="glow1">
+                                <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        
+                        <!-- 背景 -->
+                        <rect width="128" height="128" rx="24" fill="url(#grad1)"/>
+                        
+                        <!-- 2x2 书签卡片网格 -->
+                        <g transform="translate(16, 16)" filter="url(#glow1)">
+                            <!-- 左上卡片 -->
+                            <rect x="0" y="0" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                            <line x1="8" y1="12" x2="36" y2="12" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+                            <line x1="8" y1="20" x2="28" y2="20" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                            
+                            <!-- 右上卡片 -->
+                            <rect x="52" y="0" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                            <line x1="60" y1="12" x2="88" y2="12" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+                            <line x1="60" y1="20" x2="80" y2="20" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                            
+                            <!-- 左下卡片 -->
+                            <rect x="0" y="52" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                            <line x1="8" y1="64" x2="36" y2="64" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+                            <line x1="8" y1="72" x2="28" y2="72" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                            
+                            <!-- 右下卡片 - 带书签标记 -->
+                            <rect x="52" y="52" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                            <line x1="60" y1="64" x2="88" y2="64" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+                            <line x1="60" y1="72" x2="80" y2="72" stroke="#667eea" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                            
+                            <!-- 右下角书签角标 -->
+                            <path d="M 84 88 L 84 78 L 96 78 L 96 88 L 90 84 Z" fill="#667eea"/>
+                        </g>
+                    </svg>
+                </div>
+                <p class="logo-description">
+                    采用2x2网格布局的书签卡片设计，象征新标签页中整齐排列的快速访问网站。简约线条风格配合圆角矩形，体现现代浏览器的卡片式界面美学。
+                </p>
+                <div class="size-demo">
+                    <div class="size-item">
+                        <svg width="16" height="16" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="128" height="128" rx="24" fill="url(#grad1)"/>
+                            <g transform="translate(16, 16)">
+                                <rect x="0" y="0" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <rect x="52" y="0" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <rect x="0" y="52" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <rect x="52" y="52" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <path d="M 84 88 L 84 78 L 96 78 L 96 88 L 90 84 Z" fill="#667eea"/>
+                            </g>
+                        </svg>
+                        <div class="size-label">16x16</div>
+                    </div>
+                    <div class="size-item">
+                        <svg width="48" height="48" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="128" height="128" rx="24" fill="url(#grad1)"/>
+                            <g transform="translate(16, 16)">
+                                <rect x="0" y="0" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <rect x="52" y="0" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <rect x="0" y="52" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <rect x="52" y="52" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <path d="M 84 88 L 84 78 L 96 78 L 96 88 L 90 84 Z" fill="#667eea"/>
+                            </g>
+                        </svg>
+                        <div class="size-label">48x48</div>
+                    </div>
+                    <div class="size-item">
+                        <svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="128" height="128" rx="24" fill="url(#grad1)"/>
+                            <g transform="translate(16, 16)">
+                                <rect x="0" y="0" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <rect x="52" y="0" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <rect x="0" y="52" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <rect x="52" y="52" width="44" height="44" rx="8" fill="none" stroke="url(#purpleGrad)" stroke-width="2.5"/>
+                                <path d="M 84 88 L 84 78 L 96 78 L 96 88 L 90 84 Z" fill="#667eea"/>
+                            </g>
+                        </svg>
+                        <div class="size-label">128x128</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 方案2: 门户窗口 -->
+            <div class="logo-card">
+                <div class="logo-title">
+                    <span class="logo-number">2</span>
+                    门户窗口
+                </div>
+                <div class="logo-preview">
+                    <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="purpleGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                            </linearGradient>
+                            <filter id="glow2">
+                                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        
+                        <!-- 背景 -->
+                        <rect width="128" height="128" rx="24" fill="url(#grad2)"/>
+                        
+                        <!-- 拱形门户窗口 -->
+                        <g transform="translate(14, 14)" filter="url(#glow2)">
+                            <!-- 外框 - 拱形 -->
+                            <path d="M 50 0 
+                                     C 22.4 0 0 22.4 0 50 
+                                     L 0 100 
+                                     L 100 100 
+                                     L 100 50 
+                                     C 100 22.4 77.6 0 50 0 Z" 
+                                  fill="none" 
+                                  stroke="url(#purpleGrad2)" 
+                                  stroke-width="3"/>
+                            
+                            <!-- 内部网格 - 代表书签 -->
+                            <g opacity="0.8">
+                                <!-- 水平线 -->
+                                <line x1="10" y1="35" x2="90" y2="35" stroke="#667eea" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="10" y1="55" x2="90" y2="55" stroke="#667eea" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="10" y1="75" x2="90" y2="75" stroke="#667eea" stroke-width="1.5" stroke-linecap="round"/>
+                                
+                                <!-- 垂直线 -->
+                                <line x1="33" y1="35" x2="33" y2="100" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                                <line x1="67" y1="35" x2="67" y2="100" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                            </g>
+                            
+                            <!-- 顶部装饰点 -->
+                            <circle cx="50" cy="20" r="4" fill="#667eea"/>
+                            <circle cx="25" cy="30" r="2.5" fill="#667eea" opacity="0.6"/>
+                            <circle cx="75" cy="30" r="2.5" fill="#667eea" opacity="0.6"/>
+                            
+                            <!-- 底部书签标记 -->
+                            <path d="M 42 85 L 42 70 L 58 70 L 58 85 L 50 80 Z" fill="#667eea" opacity="0.9"/>
+                        </g>
+                    </svg>
+                </div>
+                <p class="logo-description">
+                    拱形门户窗口设计，象征新标签页是通往互联网的入口。内部网格线条代表整齐排列的书签，顶部装饰点增添细节感，底部书签标记强化主题。
+                </p>
+                <div class="size-demo">
+                    <div class="size-item">
+                        <svg width="16" height="16" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="128" height="128" rx="24" fill="url(#grad2)"/>
+                            <path d="M 50 0 C 22.4 0 0 22.4 0 50 L 0 100 L 100 100 L 100 50 C 100 22.4 77.6 0 50 0 Z" 
+                                  transform="translate(14,14)" fill="none" stroke="url(#purpleGrad2)" stroke-width="3"/>
+                        </svg>
+                        <div class="size-label">16x16</div>
+                    </div>
+                    <div class="size-item">
+                        <svg width="48" height="48" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="128" height="128" rx="24" fill="url(#grad2)"/>
+                            <path d="M 50 0 C 22.4 0 0 22.4 0 50 L 0 100 L 100 100 L 100 50 C 100 22.4 77.6 0 50 0 Z" 
+                                  transform="translate(14,14)" fill="none" stroke="url(#purpleGrad2)" stroke-width="3"/>
+                        </svg>
+                        <div class="size-label">48x48</div>
+                    </div>
+                    <div class="size-item">
+                        <svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="128" height="128" rx="24" fill="url(#grad2)"/>
+                            <path d="M 50 0 C 22.4 0 0 22.4 0 50 L 0 100 L 100 100 L 100 50 C 100 22.4 77.6 0 50 0 Z" 
+                                  transform="translate(14,14)" fill="none" stroke="url(#purpleGrad2)" stroke-width="3"/>
+                        </svg>
+                        <div class="size-label">128x128</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 方案3: 新标签页+ -->
+            <div class="logo-card">
+                <div class="logo-title">
+                    <span class="logo-number">3</span>
+                    新标签页+
+                </div>
+                <div class="logo-preview">
+                    <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="purpleGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                            </linearGradient>
+                            <filter id="glow3">
+                                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        
+                        <!-- 背景 -->
+                        <rect width="128" height="128" rx="24" fill="url(#grad3)"/>
+                        
+                        <!-- 浏览器标签页 + 加号 -->
+                        <g transform="translate(14, 14)" filter="url(#glow3)">
+                            <!-- 主标签页轮廓 -->
+                            <path d="M 0 25 
+                                     L 0 85 
+                                     C 0 93.3 6.7 100 15 100 
+                                     L 85 100 
+                                     C 93.3 100 100 93.3 100 85 
+                                     L 100 25 
+                                     C 100 16.7 93.3 10 85 10 
+                                     L 70 10 
+                                     L 65 0 
+                                     L 35 0 
+                                     L 30 10 
+                                     L 15 10 
+                                     C 6.7 10 0 16.7 0 25 Z" 
+                                  fill="none" 
+                                  stroke="url(#purpleGrad3)" 
+                                  stroke-width="3"/>
+                            
+                            <!-- 内部内容区域 -->
+                            <rect x="10" y="30" width="80" height="60" rx="6" fill="none" stroke="#667eea" stroke-width="1.5" opacity="0.5"/>
+                            
+                            <!-- 加号 - 代表新建/添加 -->
+                            <g transform="translate(50, 60)">
+                                <circle cx="0" cy="0" r="22" fill="none" stroke="url(#purpleGrad3)" stroke-width="3"/>
+                                <line x1="-12" y1="0" x2="12" y2="0" stroke="#667eea" stroke-width="4" stroke-linecap="round"/>
+                                <line x1="0" y1="-12" x2="0" y2="12" stroke="#667eea" stroke-width="4" stroke-linecap="round"/>
+                            </g>
+                            
+                            <!-- 顶部小标签装饰 -->
+                            <rect x="15" y="5" width="20" height="8" rx="2" fill="#667eea" opacity="0.4"/>
+                            <rect x="40" y="5" width="20" height="8" rx="2" fill="#667eea" opacity="0.6"/>
+                        </g>
+                    </svg>
+                </div>
+                <p class="logo-description">
+                    浏览器标签页形状配合醒目的加号，直观表达"新标签页"的概念。加号象征添加新书签和快速访问，整体设计简洁有力，在各种尺寸下都清晰可辨。
+                </p>
+                <div class="size-demo">
+                    <div class="size-item">
+                        <svg width="16" height="16" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="128" height="128" rx="24" fill="url(#grad3)"/>
+                            <path d="M 0 25 L 0 85 C 0 93.3 6.7 100 15 100 L 85 100 C 93.3 100 100 93.3 100 85 L 100 25 C 100 16.7 93.3 10 85 10 L 70 10 L 65 0 L 35 0 L 30 10 L 15 10 C 6.7 10 0 16.7 0 25 Z" 
+                                  transform="translate(14,14)" fill="none" stroke="url(#purpleGrad3)" stroke-width="3"/>
+                        </svg>
+                        <div class="size-label">16x16</div>
+                    </div>
+                    <div class="size-item">
+                        <svg width="48" height="48" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="128" height="128" rx="24" fill="url(#grad3)"/>
+                            <path d="M 0 25 L 0 85 C 0 93.3 6.7 100 15 100 L 85 100 C 93.3 100 100 93.3 100 85 L 100 25 C 100 16.7 93.3 10 85 10 L 70 10 L 65 0 L 35 0 L 30 10 L 15 10 C 6.7 10 0 16.7 0 25 Z" 
+                                  transform="translate(14,14)" fill="none" stroke="url(#purpleGrad3)" stroke-width="3"/>
+                        </svg>
+                        <div class="size-label">48x48</div>
+                    </div>
+                    <div class="size-item">
+                        <svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="128" height="128" rx="24" fill="url(#grad3)"/>
+                            <path d="M 0 25 L 0 85 C 0 93.3 6.7 100 15 100 L 85 100 C 93.3 100 100 93.3 100 85 L 100 25 C 100 16.7 93.3 10 85 10 L 70 10 L 65 0 L 35 0 L 30 10 L 15 10 C 6.7 10 0 16.7 0 25 Z" 
+                                  transform="translate(14,14)" fill="none" stroke="url(#purpleGrad3)" stroke-width="3"/>
+                        </svg>
+                        <div class="size-label">128x128</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="download-section">
+            <h2>选择你喜欢的方案</h2>
+            <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">
+                以上三个LOGO均采用SVG矢量格式，可以无损缩放到任意尺寸。<br>
+                告诉我你最喜欢哪个方案，我可以为你导出各种尺寸的PNG图标文件。
+            </p>
+            
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span>矢量SVG格式</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span>支持16/48/128px</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span>透明背景</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span>品牌配色</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

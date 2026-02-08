@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SVG转PNG工具</title>
+  <style>
+    body { 
+      font-family: sans-serif; 
+      padding: 20px; 
+      background: #1a1a2e; 
+      color: white;
+      text-align: center;
+    }
+    canvas { 
+      border: 1px solid #667eea; 
+      margin: 10px;
+      image-rendering: pixelated;
+    }
+    .icon-container {
+      display: inline-block;
+      margin: 20px;
+      text-align: center;
+      background: rgba(255,255,255,0.05);
+      padding: 20px;
+      border-radius: 16px;
+    }
+    .download-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 20px;
+      cursor: pointer;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    .download-btn:hover {
+      transform: scale(1.05);
+    }
+    h2 { color: #667eea; margin-bottom: 10px; }
+    p { color: rgba(255,255,255,0.7); margin-bottom: 30px; }
+    .download-all {
+      background: #4caf50;
+      padding: 15px 40px;
+      font-size: 16px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h2>新标签页扩展 LOGO - SVG转PNG</h2>
+  <p>点击下方按钮下载各尺寸的PNG图标，然后替换到扩展目录</p>
+  
+  <div id="icons"></div>
+  
+  <button class="download-btn download-all" onclick="downloadAll()">一键下载全部</button>
+  
+  <script>
+    const sizes = [16, 48, 128];
+    const container = document.getElementById('icons');
+    
+    async function loadSVG(size) {
+      const response = await fetch(`icon${size}.svg`);
+      return await response.text();
+    }
+    
+    async function createIcon(size) {
+      const div = document.createElement('div');
+      div.className = 'icon-container';
+      
+      const title = document.createElement('h3');
+      title.textContent = `${size}x${size}`;
+      div.appendChild(title);
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      canvas.id = `canvas-${size}`;
+      canvas.style.width = size === 16 ? '64px' : size === 48 ? '96px' : '128px';
+      canvas.style.height = canvas.style.width;
+      div.appendChild(canvas);
+      
+      const btn = document.createElement('button');
+      btn.className = 'download-btn';
+      btn.textContent = `下载 icon${size}.png`;
+      btn.onclick = () => downloadPNG(size);
+      div.appendChild(btn);
+      
+      container.appendChild(div);
+      
+      // 加载并绘制SVG
+      const svgText = await loadSVG(size);
+      const img = new Image();
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
+      await new Promise(resolve => {
+        img.onload = resolve;
+      });
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, size, size);
+    }
+    
+    function downloadPNG(size) {
+      const canvas = document.getElementById(`canvas-${size}`);
+      const link = document.createElement('a');
+      link.download = `icon${size}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+    
+    async function downloadAll() {
+      for (const size of sizes) {
+        downloadPNG(size);
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+    
+    // 生成所有图标
+    async function init() {
+      for (const size of sizes) {
+        await createIcon(size);
+      }
+    }
+    
+    init();
+  </script>
+</body>
+</html>

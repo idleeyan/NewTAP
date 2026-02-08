@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>生成PNG图标</title>
+  <style>
+    body { 
+      font-family: sans-serif; 
+      padding: 20px; 
+      background: #1a1a2e; 
+      color: white;
+      text-align: center;
+    }
+    canvas { 
+      border: 1px solid #667eea; 
+      margin: 10px;
+      background: transparent;
+    }
+    .icon-container {
+      display: inline-block;
+      margin: 20px;
+      text-align: center;
+    }
+    .download-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    h2 { color: #667eea; }
+  </style>
+</head>
+<body>
+  <h2>新标签页扩展 LOGO - PNG导出</h2>
+  <p>点击下方按钮下载各尺寸的PNG图标</p>
+  
+  <div id="icons"></div>
+  
+  <script>
+    const sizes = [16, 48, 128];
+    const container = document.getElementById('icons');
+    
+    // SVG内容（内嵌）
+    const svgTemplate = (size) => `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="${size}" height="${size}" rx="${Math.floor(24 * size / 128)}" fill="url(#bgGrad${size})"/>
+  <g transform="translate(${Math.floor(16 * size / 128)}, ${Math.floor(16 * size / 128)})">
+    <rect x="0" y="0" width="${Math.floor(44 * size / 128)}" height="${Math.floor(44 * size / 128)}" rx="${Math.floor(8 * size / 128)}" fill="none" stroke="#667eea" stroke-width="${Math.max(1, Math.floor(2.5 * size / 128))}"/>
+    <rect x="${Math.floor(52 * size / 128)}" y="0" width="${Math.floor(44 * size / 128)}" height="${Math.floor(44 * size / 128)}" rx="${Math.floor(8 * size / 128)}" fill="none" stroke="#667eea" stroke-width="${Math.max(1, Math.floor(2.5 * size / 128))}"/>
+    <rect x="0" y="${Math.floor(52 * size / 128)}" width="${Math.floor(44 * size / 128)}" height="${Math.floor(44 * size / 128)}" rx="${Math.floor(8 * size / 128)}" fill="none" stroke="#667eea" stroke-width="${Math.max(1, Math.floor(2.5 * size / 128))}"/>
+    <rect x="${Math.floor(52 * size / 128)}" y="${Math.floor(52 * size / 128)}" width="${Math.floor(44 * size / 128)}" height="${Math.floor(44 * size / 128)}" rx="${Math.floor(8 * size / 128)}" fill="none" stroke="#667eea" stroke-width="${Math.max(1, Math.floor(2.5 * size / 128))}"/>
+    <polygon points="${Math.floor(84 * size / 128)},${Math.floor(88 * size / 128)} ${Math.floor(84 * size / 128)},${Math.floor(78 * size / 128)} ${Math.floor(96 * size / 128)},${Math.floor(78 * size / 128)} ${Math.floor(96 * size / 128)},${Math.floor(88 * size / 128)} ${Math.floor(90 * size / 128)},${Math.floor(84 * size / 128)}" fill="#667eea"/>
+  </g>
+</svg>`;
+    
+    async function createIcon(size) {
+      const div = document.createElement('div');
+      div.className = 'icon-container';
+      
+      const title = document.createElement('h3');
+      title.textContent = `${size}x${size}`;
+      div.appendChild(title);
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      canvas.id = `canvas-${size}`;
+      div.appendChild(canvas);
+      
+      const btn = document.createElement('button');
+      btn.className = 'download-btn';
+      btn.textContent = `下载 icon${size}.png`;
+      btn.onclick = () => downloadPNG(size);
+      div.appendChild(btn);
+      
+      container.appendChild(div);
+      
+      // 绘制SVG到canvas
+      const ctx = canvas.getContext('2d');
+      const svg = svgTemplate(size);
+      const img = new Image();
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+      await new Promise(resolve => {
+        img.onload = resolve;
+      });
+      ctx.drawImage(img, 0, 0, size, size);
+    }
+    
+    function downloadPNG(size) {
+      const canvas = document.getElementById(`canvas-${size}`);
+      const link = document.createElement('a');
+      link.download = `icon${size}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+    
+    // 生成所有图标
+    async function init() {
+      for (const size of sizes) {
+        await createIcon(size);
+      }
+    }
+    
+    init();
+  </script>
+</body>
+</html>

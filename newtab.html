@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>新标签页</title>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 25px;
+      min-height: 100vh;
+    }
+    .container { width: 100%; max-width: 1600px; display: flex; flex-direction: column; gap: 25px; padding: 0 30px; }
+    #bgContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: background-image 0.5s ease-in-out;
+    }
+    #bgOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: rgba(0, 0, 0, 0.4); /* 默认遮罩，提高文字可读性 */
+      transition: background 0.3s ease;
+    }
+    .bookmarks-section, .modules-section {
+      background: rgba(30, 30, 40, 0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 25px 30px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .modules-section h2 { margin-bottom: 15px; font-size: 1.2rem; color: #333; }
+    .bookmarks-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px;
+    }
+    .dialog-content {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 15px;
+      padding: 25px;
+      color: #333;
+      width: 90%;
+      max-width: 450px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+    .context-menu {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .bookmarks-grid.small { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 18px; }
+    .bookmarks-grid.medium { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px; }
+    .bookmarks-grid.large { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; }
+    .bookmarks-grid.custom { grid-template-columns: repeat(auto-fill, minmax(var(--card-width, 150px), 1fr)); gap: 22px; }
+    .bookmark-item {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      background: rgba(255,255,255,0.08);
+      border-radius: 16px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.3);
+      min-height: 150px;
+    }
+    .bookmark-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.7;
+      transition: all 0.3s ease;
+    }
+    .bookmark-item:hover::before {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+    .bookmark-item:hover {
+      background: rgba(255,255,255,0.25);
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 16px 32px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.4), 0 0 40px rgba(102,126,234,0.5);
+      border-color: rgba(255,255,255,0.4);
+    }
+    .bookmarks-grid.small .bookmark-item { aspect-ratio: 1 / 1; min-height: 120px; }
+    .bookmarks-grid.medium .bookmark-item { aspect-ratio: 1 / 1; min-height: 160px; }
+    .bookmarks-grid.large .bookmark-item { aspect-ratio: 1 / 1; min-height: 200px; }
+    .bookmarks-grid.custom .bookmark-item { aspect-ratio: 1 / 1; min-height: 160px; }
+    .bookmark-item.round { border-radius: 50%; }
+    .bookmark-item.round:hover {
+      border-radius: 50%;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.4), 0 0 40px rgba(102,126,234,0.5);
+    }
+    .bookmark-item.round::before {
+      border-radius: 50%;
+    }
+    .bookmark-title {
+      position: relative;
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: center;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+      color: white;
+      padding: 12px 8px;
+      background: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0.8) 100%);
+      width: 100%;
+      text-shadow: 0 2px 4px rgba(0,0,0,1);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: all 0.3s ease;
+    }
+    .bookmark-item:hover .bookmark-title {
+      background: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0.8) 100%);
+      text-shadow: 0 3px 6px rgba(0,0,0,1);
+    }
+    .bookmark-item.add-bookmark {
+      border: 2px solid rgba(102, 126, 234, 0.3);
+      background: rgba(26, 26, 46, 0.8);
+      box-shadow: 
+        0 0 30px rgba(102, 126, 234, 0.1),
+        inset 0 0 30px rgba(102, 126, 234, 0.05);
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .bookmark-item.add-bookmark:hover {
+      background: rgba(26, 26, 46, 0.95);
+      border-color: rgba(102, 126, 234, 0.5);
+      box-shadow: 
+        0 0 40px rgba(102, 126, 234, 0.3),
+        inset 0 0 40px rgba(102, 126, 234, 0.1);
+      transform: translateY(-8px) scale(1.02);
+    }
+    .bookmark-item.add-bookmark::before {
+      background: none;
+    }
+    .bookmark-item.add-bookmark .bookmark-title {
+      background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.6) 100%);
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      font-size: 0.85rem;
+      padding: 8px 4px;
+    }
+    .bookmark-item.add-bookmark:hover .bookmark-title {
+      background: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0.8) 100%);
+    }
+    .bookmark-item.add-bookmark .compass-clock {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -55%);
+      width: 85%;
+      height: 85%;
+    }
+    .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+    .module-item {
+      background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,1);
+      border-radius: 12px; padding: 15px; text-align: center; color: #333; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .module-item:hover { background: rgba(255,255,255,1); }
+    .module-icon { font-size: 1.5rem; margin-bottom: 8px; }
+    .module-title { font-size: 0.9rem; }
+    .dialog {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center;
+    }
+    .dialog.active { display: flex; }
+    .dialog-content {
+      background: rgba(255,255,255,0.9); border-radius: 15px; padding: 25px;
+      color: #333; width: 90%; max-width: 450px; max-height: 80vh; overflow-y: auto;
+    }
+    .dialog-content h3 { margin-bottom: 20px; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; }
+    .form-group input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,1); background: rgba(255,255,255,0.9); color: #333; }
+    .dialog-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+    .dialog-btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; color: white; }
+    .dialog-btn.primary { background: #667eea; }
+    .dialog-btn.cancel { background: #666; }
+    .settings-button {
+      position: fixed; top: 15px; right: 15px; z-index: 1000;
+      background: rgba(255,255,255,0.9); border: none; border-radius: 50%;
+      width: 40px; height: 40px; cursor: pointer; font-size: 1.2rem;
+    }
+    .context-menu {
+      display: none; position: fixed; z-index: 2000;
+      background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,1);
+      border-radius: 10px; min-width: 160px; overflow: hidden;
+    }
+    .context-menu.active { display: block; }
+    .context-menu-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 15px; cursor: pointer; color: #333;
+    }
+    .context-menu-item:hover { background: rgba(255,255,255,1); }
+    .add-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+    .search-input-group {
+      display: flex; gap: 8px;
+    }
+    .search-input-group input {
+      flex: 1;
+    }
+    #logoSearchResults {
+      display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+    }
+    .import-list {
+      max-height: 300px; overflow-y: auto; margin-top: 15px; border-top: 1px solid rgba(255,255,255,1);
+      padding-top: 15px;
+    }
+    .import-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px;
+      background: rgba(255,255,255,0.9); border-radius: 8px; margin-bottom: 8px; cursor: pointer;
+      color: #333;
+    }
+    .import-item:hover { background: rgba(255,255,255,1); }
+    .add-option {
+      background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,1);
+      border-radius: 10px; padding: 15px; cursor: pointer; text-align: center; color: #333;
+    }
+    .add-option:hover { background: rgba(255,255,255,1); }
+    .settings-section { margin-bottom: 20px; }
+    .settings-section h4 { margin-bottom: 10px; color: #333; }
+    .size-buttons, .shape-buttons, .sort-buttons {
+      display: flex; gap: 10px; justify-content: flex-start;
+    }
+    .bookmarks-section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+    .bookmarks-count {
+      font-size: 0.85rem;
+      opacity: 0.7;
+    }
+    .bookmarks-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 15px;
+    }
+    .bookmarks-section-header:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .toggle-icon {
+      transition: transform 0.3s ease;
+      font-size: 0.8rem;
+    }
+    .bookmarks-section-header.expanded .toggle-icon {
+      transform: rotate(180deg);
+    }
+    /* 优化后的抽屉动画样式 */
+    .collapsible-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0;
+    }
+    .collapsible-wrapper.expanded {
+      grid-template-rows: 1fr;
+      opacity: 1;
+    }
+    .collapsible-wrapper > div {
+      overflow: hidden;
+      min-height: 0;
+    }
+    /* 调整展开时的间距 */
+    #moreBookmarksGrid {
+      padding-top: 5px; /* 预留一点空间给阴影 */
+      padding-bottom: 20px; /* 底部空间 */
+    }
+    #moreBookmarksGrid .bookmark-title {
+      font-size: 0.85rem;
+      padding: 8px 6px;
+    }
+    /* 拖拽相关样式 */
+    .bookmark-item.dragging {
+      opacity: 0.4;
+      transform: scale(0.95);
+      border: 2px dashed rgba(255,255,255,0.5);
+      cursor: grabbing;
+    }
+
+    .bookmark-item.drag-over {
+      transform: scale(1.05) translateY(-5px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5);
+      border-color: #667eea;
+      z-index: 10;
+    }
+
+    /* 防止拖拽时图片干扰 */
+    .bookmark-item img {
+      pointer-events: none;
+    }
+
+    .stats-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    .stats-item:hover {
+      background: rgba(255,255,255,1);
+    }
+    .stats-item img {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      object-fit: contain;
+      background: white;
+    }
+    .stats-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .stats-item-name {
+      font-weight: 500;
+      font-size: 0.95rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .stats-item-url {
+      font-size: 0.75rem;
+      color: #666;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .stats-item-count {
+      text-align: right;
+    }
+    .stats-item-count .number {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #667eea;
+    }
+    .stats-item-count .label {
+      font-size: 0.7rem;
+      color: #999;
+    }
+
+    /* 启动动画关键帧 */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 应用于卡片的动画类 */
+    .bookmark-item.animate-in {
+      animation: fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      opacity: 0; /* 初始不可见，等待动画执行 */
+    }
+
+    /* 减弱动态效果设置（无障碍） */
+    @media (prefers-reduced-motion: reduce) {
+      .bookmark-item.animate-in {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+      .compass-glow-track, .compass-glow-dot.active, .glow-number.active {
+        animation: none;
+      }
+    }
+
+    @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+    /* 罗盘时钟样式 - 作为添加按钮 */
+    .compass-bg {
+      display: none;
+    }
+    .compass-clock {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.3));
+    }
+    .compass-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .compass-hours {
+      width: 90%;
+      height: 90%;
+      border: 2px solid rgba(255, 200, 100, 0.15);
+      box-shadow: 
+        0 0 20px rgba(255, 200, 100, 0.1),
+        inset 0 0 30px rgba(255, 200, 100, 0.05);
+    }
+    .compass-minutes {
+      width: 90%;
+      height: 90%;
+      border: 2px solid rgba(102, 126, 234, 0.15);
+      box-shadow: 
+        0 0 20px rgba(102, 126, 234, 0.1),
+        inset 0 0 30px rgba(102, 126, 234, 0.05);
+    }
+    .compass-seconds {
+      width: 90%;
+      height: 90%;
+      border: 2px solid rgba(255, 107, 107, 0.15);
+      box-shadow: 
+        0 0 20px rgba(255, 107, 107, 0.1),
+        inset 0 0 30px rgba(255, 107, 107, 0.05);
+    }
+    .compass-number {
+      position: absolute;
+      font-size: 40px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.4);
+      transition: all 0.3s ease;
+    }
+    .compass-number.active {
+      color: rgba(255,255,255,1);
+      font-size: 52px;
+      font-weight: 700;
+      text-shadow: 0 0 15px rgba(255,255,255,0.9), 0 0 30px rgba(255,255,255,0.5);
+    }
+    .compass-number.nearby {
+      color: rgba(255,255,255,0.65);
+      font-size: 44px;
+    }
+    .compass-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 25%;
+      height: 25%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .compass-date {
+      font-size: clamp(10px, 3vw, 16px);
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      line-height: 1;
+    }
+    .compass-weekday {
+      font-size: clamp(8px, 2vw, 11px);
+      color: rgba(255,255,255,0.6);
+      margin-top: 2px;
+    }
+    .compass-marker {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 8%;
+      background: #ff6b6b;
+      border-radius: 1px;
+      z-index: 10;
+      box-shadow: 0 0 8px rgba(255, 107, 107, 1), 0 0 16px rgba(255, 107, 107, 0.6);
+    }
+    /* 时针圈指针 - 在最外圈 */
+    .compass-hours .compass-marker {
+      height: 10%;
+      width: 2px;
+      top: 5%;
+    }
+    /* 分针圈指针 - 在中圈 */
+    .compass-minutes .compass-marker {
+      height: 7%;
+      width: 2px;
+      top: 5%;
+    }
+    /* 秒针圈指针 - 在内圈 */
+    .compass-seconds .compass-marker {
+      height: 5%;
+      width: 2px;
+      top: 5%;
+    }
+    /* 酷炫光圈效果 */
+    .compass-glow-track {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 1px solid transparent;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%);
+      animation: trackPulse 3s ease-in-out infinite;
+    }
+    @keyframes trackPulse {
+      0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.02); }
+    }
+    .compass-hours .compass-glow-track {
+      width: 85%;
+      height: 85%;
+      border-color: rgba(255, 200, 100, 0.2);
+      box-shadow: 0 0 20px rgba(255, 200, 100, 0.15), inset 0 0 20px rgba(255, 200, 100, 0.05);
+    }
+    .compass-minutes .compass-glow-track {
+      width: 85%;
+      height: 85%;
+      border-color: rgba(102, 126, 234, 0.2);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.15), inset 0 0 20px rgba(102, 126, 234, 0.05);
+    }
+    .compass-seconds .compass-glow-track {
+      width: 85%;
+      height: 85%;
+      border-color: rgba(255, 107, 107, 0.2);
+      box-shadow: 0 0 20px rgba(255, 107, 107, 0.15), inset 0 0 20px rgba(255, 107, 107, 0.05);
+    }
+    .compass-glow-dot {
+      position: absolute;
+      width: 3%;
+      height: 3%;
+      min-width: 3px;
+      min-height: 3px;
+      background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
+      border-radius: 50%;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 3px rgba(255,255,255,0.2);
+    }
+    .compass-glow-dot.active {
+      width: 6%;
+      height: 6%;
+      min-width: 6px;
+      min-height: 6px;
+      background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(102, 126, 234, 1) 100%);
+      box-shadow: 0 0 10px rgba(102, 126, 234, 1), 0 0 20px rgba(102, 126, 234, 0.6), 0 0 30px rgba(102, 126, 234, 0.3);
+      animation: dotPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes dotPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
+    }
+    .compass-glow-dot.nearby {
+      width: 4%;
+      height: 4%;
+      min-width: 4px;
+      min-height: 4px;
+      background: radial-gradient(circle, rgba(102, 126, 234, 0.8) 0%, rgba(102, 126, 234, 0.3) 100%);
+      box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+    }
+    /* 时针圈光点 - 金色 */
+    .compass-hours .compass-glow-dot.active {
+      background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255, 200, 100, 1) 100%);
+      box-shadow: 0 0 20px rgba(255, 200, 100, 1), 0 0 40px rgba(255, 200, 100, 0.6), 0 0 60px rgba(255, 200, 100, 0.3);
+    }
+    .compass-hours .compass-glow-dot.nearby {
+      background: radial-gradient(circle, rgba(255, 200, 100, 0.8) 0%, rgba(255, 200, 100, 0.3) 100%);
+      box-shadow: 0 0 10px rgba(255, 200, 100, 0.5);
+    }
+    /* 秒针圈光点 - 红色 */
+    .compass-seconds .compass-glow-dot.active {
+      background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255, 107, 107, 1) 100%);
+      box-shadow: 0 0 20px rgba(255, 107, 107, 1), 0 0 40px rgba(255, 107, 107, 0.6), 0 0 60px rgba(255, 107, 107, 0.3);
+    }
+    .compass-seconds .compass-glow-dot.nearby {
+      background: radial-gradient(circle, rgba(255, 107, 107, 0.8) 0%, rgba(255, 107, 107, 0.3) 100%);
+      box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+    }
+    /* 时针圈数字 - 酷炫发光效果 */
+    .compass-hours .glow-number {
+      font-size: clamp(6px, 1.5vw, 10px);
+      font-weight: 500;
+      color: rgba(255, 200, 100, 0.4);
+      text-shadow: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .compass-hours .glow-number.active {
+      font-size: clamp(14px, 4vw, 22px);
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 
+        0 0 5px rgba(255, 200, 100, 1),
+        0 0 15px rgba(255, 200, 100, 0.9),
+        0 0 30px rgba(255, 200, 100, 0.7);
+      animation: numberGlow 2s ease-in-out infinite;
+    }
+    @keyframes numberGlow {
+      0%, 100% { text-shadow: 0 0 5px rgba(255, 200, 100, 1), 0 0 15px rgba(255, 200, 100, 0.9), 0 0 30px rgba(255, 200, 100, 0.7); }
+      50% { text-shadow: 0 0 10px rgba(255, 200, 100, 1), 0 0 25px rgba(255, 200, 100, 0.9), 0 0 45px rgba(255, 200, 100, 0.7); }
+    }
+    .compass-hours .glow-number.nearby {
+      font-size: clamp(8px, 2vw, 12px);
+      font-weight: 600;
+      color: rgba(255, 200, 100, 0.7);
+      text-shadow: 0 0 4px rgba(255, 200, 100, 0.4);
+    }
+    /* 分针圈数字 - 酷炫发光效果 */
+    .compass-minutes .glow-number {
+      font-size: clamp(5px, 1.2vw, 8px);
+      font-weight: 500;
+      color: rgba(102, 126, 234, 0.4);
+      text-shadow: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .compass-minutes .glow-number.active {
+      font-size: clamp(12px, 3.5vw, 18px);
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 
+        0 0 5px rgba(102, 126, 234, 1),
+        0 0 15px rgba(102, 126, 234, 0.9),
+        0 0 30px rgba(102, 126, 234, 0.7);
+      animation: numberGlowBlue 2s ease-in-out infinite;
+    }
+    @keyframes numberGlowBlue {
+      0%, 100% { text-shadow: 0 0 5px rgba(102, 126, 234, 1), 0 0 15px rgba(102, 126, 234, 0.9), 0 0 30px rgba(102, 126, 234, 0.7); }
+      50% { text-shadow: 0 0 10px rgba(102, 126, 234, 1), 0 0 25px rgba(102, 126, 234, 0.9), 0 0 45px rgba(102, 126, 234, 0.7); }
+    }
+    .compass-minutes .glow-number.nearby {
+      font-size: clamp(6px, 1.5vw, 10px);
+      font-weight: 600;
+      color: rgba(102, 126, 234, 0.7);
+      text-shadow: 0 0 4px rgba(102, 126, 234, 0.4);
+    }
+    /* 秒针圈数字 - 酷炫发光效果 */
+    .compass-seconds .glow-number {
+      font-size: clamp(4px, 1vw, 7px);
+      font-weight: 500;
+      color: rgba(255, 107, 107, 0.4);
+      text-shadow: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .compass-seconds .glow-number.active {
+      font-size: clamp(10px, 3vw, 16px);
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 
+        0 0 5px rgba(255, 107, 107, 1),
+        0 0 15px rgba(255, 107, 107, 0.9),
+        0 0 30px rgba(255, 107, 107, 0.7);
+      animation: numberGlowRed 2s ease-in-out infinite;
+    }
+    @keyframes numberGlowRed {
+      0%, 100% { text-shadow: 0 0 5px rgba(255, 107, 107, 1), 0 0 15px rgba(255, 107, 107, 0.9), 0 0 30px rgba(255, 107, 107, 0.7); }
+      50% { text-shadow: 0 0 10px rgba(255, 107, 107, 1), 0 0 25px rgba(255, 107, 107, 0.9), 0 0 45px rgba(255, 107, 107, 0.7); }
+    }
+    .compass-seconds .glow-number.nearby {
+      font-size: clamp(5px, 1.2vw, 9px);
+      font-weight: 600;
+      color: rgba(255, 107, 107, 0.7);
+      text-shadow: 0 0 4px rgba(255, 107, 107, 0.4);
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="bgContainer"></div>
+  <div id="bgOverlay"></div>
+  <div class="compass-bg" style="display: none;">
+    <div class="compass-clock" id="compassTemplate">
+      <div class="compass-ring compass-hours" id="compassHours"></div>
+      <div class="compass-ring compass-minutes" id="compassMinutes"></div>
+      <div class="compass-ring compass-seconds" id="compassSeconds"></div>
+      <div class="compass-center">
+        <div class="compass-date" id="compassDate">1/1</div>
+        <div class="compass-weekday" id="compassWeekday">周一</div>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="bookmarks-section">
+      <div class="bookmarks-section-title">
+        <span>常用网站</span>
+        <span class="bookmarks-count" id="topBookmarksCount"></span>
+      </div>
+      <div class="bookmarks-grid" id="topBookmarksGrid"></div>
+    </div>
+    <div class="bookmarks-section" id="moreBookmarksSection">
+      <div class="bookmarks-section-header" id="moreBookmarksHeader">
+        <span>更多网站</span>
+        <span class="toggle-icon" id="toggleMoreIcon">▼</span>
+      </div>
+      <div id="moreBookmarksWrapper" class="collapsible-wrapper">
+        <div class="bookmarks-grid" id="moreBookmarksGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog" id="editDialog">
+    <div class="dialog-content">
+      <form id="editForm">
+        <h3>编辑网站</h3>
+        <div class="form-group"><label>名称</label><input type="text" id="editName" required></div>
+        <div class="form-group"><label>网址</label><input type="url" id="editUrl" required></div>
+        <div class="form-group">
+          <label>图标URL</label>
+          <input type="text" id="editIcon" placeholder="输入图标URL或使用搜索">
+        </div>
+        <div class="form-group">
+          <label>搜索LOGO</label>
+          <div class="search-input-group">
+            <input type="text" id="logoSearchInput" placeholder="输入网站域名搜索LOGO">
+            <button type="button" class="dialog-btn" id="logoSearchBtn" style="background:rgba(102,126,234,1);">搜索</button>
+          </div>
+          <div id="logoSearchResults"></div>
+        </div>
+        <div class="dialog-buttons">
+          <button type="button" class="dialog-btn cancel" id="cancelEditBtn">取消</button>
+          <button type="submit" class="dialog-btn primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="dialog" id="addBookmarkDialog">
+    <div class="dialog-content">
+      <h3>添加网站</h3>
+      <div class="add-options">
+        <button type="button" class="add-option" id="manualAddBtn">✏️ 手动输入</button>
+        <button type="button" class="add-option" id="historyAddBtn">📜 从历史导入</button>
+        <button type="button" class="add-option" id="bookmarkAddBtn">🔖 从书签导入</button>
+        <button type="button" class="add-option" id="openTabsAddBtn">📑 从标签页导入</button>
+      </div>
+      <form id="manualAddForm" style="display:none;">
+        <div class="form-group"><label>名称</label><input type="text" id="manualName" required></div>
+        <div class="form-group"><label>网址</label><input type="url" id="manualUrl" placeholder="https://" required></div>
+        <div class="dialog-buttons">
+          <button type="button" class="dialog-btn cancel" id="cancelManualAddBtn">取消</button>
+          <button type="submit" class="dialog-btn primary">添加</button>
+        </div>
+      </form>
+      <div id="historyItemsContainer" class="import-list" style="display:none;"></div>
+      <div id="bookmarkItemsContainer" class="import-list" style="display:none;"></div>
+      <div id="openTabsContainer" class="import-list" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="dialog" id="settingsDialog">
+    <div class="dialog-content">
+      <h3>设置</h3>
+      <div class="settings-section">
+        <h4>个性化背景</h4>
+        <div class="form-group">
+          <label>背景模式</label>
+          <div class="sort-buttons">
+            <button type="button" class="dialog-btn bg-mode-btn" data-mode="default">默认深色</button>
+            <button type="button" class="dialog-btn bg-mode-btn" data-mode="bing">必应每日</button>
+            <button type="button" class="dialog-btn bg-mode-btn" data-mode="custom">自定义图片</button>
+          </div>
+        </div>
+        <div class="form-group" id="bgCustomUrlGroup" style="display: none;">
+          <label>图片链接 (URL)</label>
+          <input type="url" id="bgCustomUrl" placeholder="https://example.com/image.jpg">
+        </div>
+        <div class="form-group">
+          <label>遮罩浓度 (0-100%)</label>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="range" id="bgOverlayOpacity" min="0" max="100" value="40" style="flex: 1;">
+            <span id="bgOverlayValue">40%</span>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="size-buttons">
+          <button type="button" class="dialog-btn size-button" data-size="small">小</button>
+          <button type="button" class="dialog-btn size-button" data-size="medium">中</button>
+          <button type="button" class="dialog-btn size-button" data-size="large">大</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>卡片形状</h4>
+        <div class="shape-buttons">
+          <button type="button" class="dialog-btn shape-button" data-shape="square">方形</button>
+          <button type="button" class="dialog-btn shape-button" data-shape="round">圆形</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>排序方式</h4>
+        <div class="sort-buttons">
+          <button type="button" class="dialog-btn sort-button" data-sort="default">默认</button>
+          <button type="button" class="dialog-btn sort-button" data-sort="visits">访问次数</button>
+          <button type="button" class="dialog-btn sort-button" data-sort="recent">最近访问</button>
+          <button type="button" class="dialog-btn sort-button" data-sort="name">名称</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>数据统计</h4>
+        <div class="dialog-buttons" style="justify-content: flex-start;">
+          <button type="button" class="dialog-btn" id="viewStatsBtn" style="background:rgba(33,150,243,1);">📊 查看访问统计</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>数据备份 & 恢复</h4>
+        <div class="dialog-buttons" style="justify-content: flex-start; margin-bottom: 15px;">
+          <button type="button" class="dialog-btn" id="createBackupBtn" style="background:rgba(102,126,234,1);">➕ 创建新备份</button>
+        </div>
+        <div id="backupList" style="max-height: 200px; overflow-y: auto; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; background: rgba(255,255,255,0.5);">
+          <!-- 备份列表将在这里渲染 -->
+          <div style="padding: 15px; text-align: center; color: #666; font-size: 0.85rem;">正在加载备份...</div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>数据管理</h4>
+        <div class="dialog-buttons" style="justify-content: flex-start;">
+          <button type="button" class="dialog-btn" style="background:rgba(76,175,80,1);">导出数据</button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none;">
+          <button type="button" class="dialog-btn" style="background:rgba(255,152,0,1);">导入数据</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>WebDAV同步</h4>
+        <div id="webdavStatus" style="margin-bottom: 10px; font-size: 0.85rem; color: #666;">
+          未配置
+        </div>
+        <div class="dialog-buttons" style="justify-content: flex-start; flex-wrap: wrap; gap: 8px;">
+          <button type="button" class="dialog-btn" id="webdavConfigBtn" style="background:rgba(102,126,234,1);">配置</button>
+          <button type="button" class="dialog-btn" id="webdavUploadBtn" style="background:rgba(76,175,80,1); display:none;">上传到云端</button>
+          <button type="button" class="dialog-btn" id="webdavDownloadBtn" style="background:rgba(255,152,0,1); display:none;">从云端下载</button>
+          <button type="button" class="dialog-btn" id="webdavDisconnectBtn" style="background:rgba(244,67,54,1); display:none;">断开连接</button>
+        </div>
+      </div>
+      <div class="settings-section" id="autoSyncSection" style="display:none;">
+        <h4>自动同步</h4>
+        <div id="autoSyncStatus" style="margin-bottom: 10px; font-size: 0.85rem; color: #666;">
+          未启用
+        </div>
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="autoSyncEnabled" style="width: auto;">
+            <span>启用自动同步</span>
+          </label>
+        </div>
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label>同步间隔（分钟）</label>
+          <input type="number" id="autoSyncInterval" value="30" min="5" max="1440" style="width: 100px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="autoSyncOnStart" style="width: auto;">
+            <span>启动时同步</span>
+          </label>
+        </div>
+        <div class="dialog-buttons" style="justify-content: flex-start;">
+          <button type="button" class="dialog-btn" id="saveAutoSyncBtn" style="background:rgba(102,126,234,1);">保存设置</button>
+        </div>
+      </div>
+      <div class="dialog-buttons">
+        <button type="button" class="dialog-btn primary" id="cancelSettingsBtn">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog" id="statsDialog">
+    <div class="dialog-content" style="max-width: 600px;">
+      <h3>📊 访问统计</h3>
+      <div id="statsSummary" style="margin-bottom: 20px; padding: 15px; background: rgba(102,126,234,0.1); border-radius: 12px;">
+        <div style="display: flex; gap: 20px; justify-content: space-around;">
+          <div style="text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: 600; color: #667eea;" id="totalVisits">0</div>
+            <div style="font-size: 0.85rem; color: #666;">总访问次数</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: 600; color: #667eea;" id="totalBookmarks">0</div>
+            <div style="font-size: 0.85rem; color: #666;">网站总数</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: 600; color: #667eea;" id="mostVisited">-</div>
+            <div style="font-size: 0.85rem; color: #666;">最常访问</div>
+          </div>
+        </div>
+      </div>
+      <div style="max-height: 400px; overflow-y: auto;" id="statsList">
+      </div>
+      <div class="dialog-buttons">
+        <button type="button" class="dialog-btn primary" id="closeStatsBtn">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog" id="webdavConfigDialog">
+    <div class="dialog-content">
+      <h3>WebDAV配置</h3>
+      <form id="webdavConfigForm">
+        <div class="form-group">
+          <label>服务器地址</label>
+          <input type="url" id="webdavServerUrl" placeholder="https://example.com/dav" required>
+        </div>
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="webdavUsername" placeholder="用户名" required>
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="webdavPassword" placeholder="密码" required>
+        </div>
+        <div class="form-group">
+          <label>同步路径（可选）</label>
+          <input type="text" id="webdavSyncPath" placeholder="/newtab-sync/" value="/newtab-sync/">
+        </div>
+        <div id="webdavTestResult" style="margin-bottom: 15px; font-size: 0.85rem;"></div>
+        <div class="dialog-buttons">
+          <button type="button" class="dialog-btn cancel" id="cancelWebdavConfigBtn">取消</button>
+          <button type="button" class="dialog-btn" id="testWebdavBtn" style="background:rgba(102,126,234,1);">测试连接</button>
+          <button type="submit" class="dialog-btn primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="context-menu" id="contextMenu">
+    <div class="context-menu-item" data-action="currentTab"><span>📖</span><span>在此标签页打开</span></div>
+    <div class="context-menu-item" data-action="newTab"><span>➡️</span><span>在新标签页中打开</span></div>
+    <div class="context-menu-item" data-action="edit"><span>✏️</span><span>编辑网站信息</span></div>
+    <div class="context-menu-item" data-action="delete"><span>🗑️</span><span>删除书签</span></div>
+  </div>
+
+  <button class="settings-button" id="settingsButton" title="设置">⚙️</button>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
