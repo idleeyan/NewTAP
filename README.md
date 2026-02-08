@@ -17,13 +17,7 @@
 
 ## 安装方法
 
-### 方式一：Chrome 网上应用店（推荐）
-
-1. 访问 Chrome 网上应用店
-2. 搜索 "NewTAP" 或 "新标签页"
-3. 点击"添加至 Chrome"
-
-### 方式二：开发者模式安装
+### 开发者模式安装（推荐）
 
 1. 下载本仓库代码并解压
 2. 打开 Chrome/Edge 浏览器，进入扩展管理页面 (`chrome://extensions/` 或 `edge://extensions/`)
