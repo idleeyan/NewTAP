@@ -3,8 +3,9 @@ import { BookmarkManager } from './BookmarkManager.js';
 import { SettingsManager } from './SettingsManager.js';
 import { StatsManager } from './StatsManager.js';
 import { UIManager } from './UIManager.js';
-import { WebDAVSyncManager, AutoSyncManager } from './SyncManager.js';
+import { WebDAVSyncManager, AutoSyncManager } from './sync/index.js';
 import { BackupManager } from './BackupManager.js';
+import { StickyNoteManager } from './StickyNoteManager.js';
 
 class App {
   constructor() {
@@ -14,6 +15,7 @@ class App {
     this.webdavSyncManager = new WebDAVSyncManager();
     this.autoSyncManager = new AutoSyncManager(this.webdavSyncManager);
     this.backupManager = new BackupManager(this.bookmarkManager, this.settingsManager);
+    this.stickyNoteManager = new StickyNoteManager();
 
     // UI Manager orchestrates the view
     this.uiManager = new UIManager(
@@ -21,7 +23,8 @@ class App {
       this.settingsManager,
       this.statsManager,
       this.webdavSyncManager,
-      this.backupManager
+      this.backupManager,
+      this.stickyNoteManager
     );
   }
 
@@ -32,6 +35,7 @@ class App {
     await this.webdavSyncManager.loadConfig();
     await this.autoSyncManager.loadConfig();
     await this.backupManager.init(); // Auto backup check
+    await this.stickyNoteManager.init(); // Load sticky notes
 
     // Initialize UI
     this.settingsManager.setupUI();
@@ -233,6 +237,10 @@ class App {
   }
 
   async startAutoSync() {
+      this.autoSyncManager.setOnSyncComplete(async (result) => {
+          await this.reloadAllData();
+          console.log('定时自动同步完成，UI已刷新');
+      });
       this.autoSyncManager.start();
       const result = await this.autoSyncManager.syncOnStartIfEnabled();
       if (result.success && result.direction === 'download') {
@@ -244,7 +252,11 @@ class App {
   async reloadAllData() {
       await this.bookmarkManager.loadBookmarks();
       await this.settingsManager.init();
+      await this.stickyNoteManager.loadNotes();
       this.uiManager.renderBookmarks();
+      if (this.uiManager.isNotesPageOpen) {
+          this.uiManager.renderNotes();
+      }
       this.updateWebDAVStatus();
   }
 }

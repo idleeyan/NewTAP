@@ -1,0 +1,404 @@
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes pulse-attention {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6), 0 0 0 0 rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6), 0 0 0 8px rgba(102, 126, 234, 0);
+  }
+}
+
+@keyframes trackPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.02);
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.9;
+  }
+}
+
+@keyframes numberGlow {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(255, 200, 100, 1),
+                 0 0 15px rgba(255, 200, 100, 0.9),
+                 0 0 30px rgba(255, 200, 100, 0.7);
+  }
+  50% {
+    text-shadow: 0 0 10px rgba(255, 200, 100, 1),
+                 0 0 25px rgba(255, 200, 100, 0.9),
+                 0 0 45px rgba(255, 200, 100, 0.7);
+  }
+}
+
+@keyframes numberGlowBlue {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(102, 126, 234, 1),
+                 0 0 15px rgba(102, 126, 234, 0.9),
+                 0 0 30px rgba(102, 126, 234, 0.7);
+  }
+  50% {
+    text-shadow: 0 0 10px rgba(102, 126, 234, 1),
+                 0 0 25px rgba(102, 126, 234, 0.9),
+                 0 0 45px rgba(102, 126, 234, 0.7);
+  }
+}
+
+@keyframes numberGlowRed {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(255, 107, 107, 1),
+                 0 0 15px rgba(255, 107, 107, 0.9),
+                 0 0 30px rgba(255, 107, 107, 0.7);
+  }
+  50% {
+    text-shadow: 0 0 10px rgba(255, 107, 107, 1),
+                 0 0 25px rgba(255, 107, 107, 0.9),
+                 0 0 45px rgba(255, 107, 107, 0.7);
+  }
+}
+
+.bookmark-item.animate-in {
+  animation: fadeInUp 0.25s cubic-bezier(0.05, 0.7, 0.1, 1) forwards;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookmark-item.animate-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .compass-glow-track,
+  .compass-glow-dot.active,
+  .glow-number.active {
+    animation: none;
+  }
+}
+
+.slide-trigger-zone.left:hover .slide-btn.left {
+  animation: pulse-attention 2s ease-in-out infinite;
+}
+
+.compass-bg {
+  display: none;
+}
+
+.compass-clock {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.3));
+}
+
+.compass-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.compass-hours {
+  width: 90%;
+  height: 90%;
+  border: 2px solid rgba(255, 200, 100, 0.15);
+  box-shadow: 0 0 20px rgba(255, 200, 100, 0.1),
+              inset 0 0 30px rgba(255, 200, 100, 0.05);
+}
+
+.compass-minutes {
+  width: 90%;
+  height: 90%;
+  border: 2px solid rgba(102, 126, 234, 0.15);
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.1),
+              inset 0 0 30px rgba(102, 126, 234, 0.05);
+}
+
+.compass-seconds {
+  width: 90%;
+  height: 90%;
+  border: 2px solid rgba(255, 107, 107, 0.15);
+  box-shadow: 0 0 20px rgba(255, 107, 107, 0.1),
+              inset 0 0 30px rgba(255, 107, 107, 0.05);
+}
+
+.compass-number {
+  position: absolute;
+  font-size: 40px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.compass-number.active {
+  color: rgba(255, 255, 255, 1);
+  font-size: 52px;
+  font-weight: 700;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.9),
+               0 0 30px rgba(255, 255, 255, 0.5);
+}
+
+.compass-number.nearby {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 44px;
+}
+
+.compass-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 25%;
+  height: 25%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.compass-date {
+  font-size: clamp(10px, 3vw, 16px);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1;
+}
+
+.compass-weekday {
+  font-size: clamp(8px, 2vw, 11px);
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 2px;
+}
+
+.compass-marker {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 8%;
+  background: #ff6b6b;
+  border-radius: 1px;
+  z-index: 10;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 1),
+              0 0 16px rgba(255, 107, 107, 0.6);
+}
+
+.compass-hours .compass-marker {
+  height: 10%;
+  width: 2px;
+  top: 5%;
+}
+
+.compass-minutes .compass-marker {
+  height: 7%;
+  width: 2px;
+  top: 5%;
+}
+
+.compass-seconds .compass-marker {
+  height: 5%;
+  width: 2px;
+  top: 5%;
+}
+
+.compass-glow-track {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%, rgba(255, 255, 255, 0.05) 100%);
+  animation: trackPulse 3s ease-in-out infinite;
+}
+
+.compass-hours .compass-glow-track {
+  width: 85%;
+  height: 85%;
+  border-color: rgba(255, 200, 100, 0.2);
+  box-shadow: 0 0 20px rgba(255, 200, 100, 0.15),
+              inset 0 0 20px rgba(255, 200, 100, 0.05);
+}
+
+.compass-minutes .compass-glow-track {
+  width: 85%;
+  height: 85%;
+  border-color: rgba(102, 126, 234, 0.2);
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.15),
+              inset 0 0 20px rgba(102, 126, 234, 0.05);
+}
+
+.compass-seconds .compass-glow-track {
+  width: 85%;
+  height: 85%;
+  border-color: rgba(255, 107, 107, 0.2);
+  box-shadow: 0 0 20px rgba(255, 107, 107, 0.15),
+              inset 0 0 20px rgba(255, 107, 107, 0.05);
+}
+
+.compass-glow-dot {
+  position: absolute;
+  width: 3%;
+  height: 3%;
+  min-width: 3px;
+  min-height: 3px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%);
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.compass-glow-dot.active {
+  width: 6%;
+  height: 6%;
+  min-width: 6px;
+  min-height: 6px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(102, 126, 234, 1) 100%);
+  box-shadow: 0 0 10px rgba(102, 126, 234, 1),
+              0 0 20px rgba(102, 126, 234, 0.6),
+              0 0 30px rgba(102, 126, 234, 0.3);
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+.compass-glow-dot.nearby {
+  width: 4%;
+  height: 4%;
+  min-width: 4px;
+  min-height: 4px;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.8) 0%, rgba(102, 126, 234, 0.3) 100%);
+  box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+}
+
+.compass-hours .compass-glow-dot.active {
+  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 200, 100, 1) 100%);
+  box-shadow: 0 0 20px rgba(255, 200, 100, 1),
+              0 0 40px rgba(255, 200, 100, 0.6),
+              0 0 60px rgba(255, 200, 100, 0.3);
+}
+
+.compass-hours .compass-glow-dot.nearby {
+  background: radial-gradient(circle, rgba(255, 200, 100, 0.8) 0%, rgba(255, 200, 100, 0.3) 100%);
+  box-shadow: 0 0 10px rgba(255, 200, 100, 0.5);
+}
+
+.compass-seconds .compass-glow-dot.active {
+  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 107, 107, 1) 100%);
+  box-shadow: 0 0 20px rgba(255, 107, 107, 1),
+              0 0 40px rgba(255, 107, 107, 0.6),
+              0 0 60px rgba(255, 107, 107, 0.3);
+}
+
+.compass-seconds .compass-glow-dot.nearby {
+  background: radial-gradient(circle, rgba(255, 107, 107, 0.8) 0%, rgba(255, 107, 107, 0.3) 100%);
+  box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+}
+
+.compass-hours .glow-number {
+  font-size: clamp(6px, 1.5vw, 10px);
+  font-weight: 500;
+  color: rgba(255, 200, 100, 0.4);
+  text-shadow: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.compass-hours .glow-number.active {
+  font-size: clamp(14px, 4vw, 22px);
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 5px rgba(255, 200, 100, 1),
+               0 0 15px rgba(255, 200, 100, 0.9),
+               0 0 30px rgba(255, 200, 100, 0.7);
+  animation: numberGlow 2s ease-in-out infinite;
+}
+
+.compass-hours .glow-number.nearby {
+  font-size: clamp(8px, 2vw, 12px);
+  font-weight: 600;
+  color: rgba(255, 200, 100, 0.7);
+  text-shadow: 0 0 4px rgba(255, 200, 100, 0.4);
+}
+
+.compass-minutes .glow-number {
+  font-size: clamp(5px, 1.2vw, 8px);
+  font-weight: 500;
+  color: rgba(102, 126, 234, 0.4);
+  text-shadow: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.compass-minutes .glow-number.active {
+  font-size: clamp(12px, 3.5vw, 18px);
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 5px rgba(102, 126, 234, 1),
+               0 0 15px rgba(102, 126, 234, 0.9),
+               0 0 30px rgba(102, 126, 234, 0.7);
+  animation: numberGlowBlue 2s ease-in-out infinite;
+}
+
+.compass-minutes .glow-number.nearby {
+  font-size: clamp(6px, 1.5vw, 10px);
+  font-weight: 600;
+  color: rgba(102, 126, 234, 0.7);
+  text-shadow: 0 0 4px rgba(102, 126, 234, 0.4);
+}
+
+.compass-seconds .glow-number {
+  font-size: clamp(4px, 1vw, 7px);
+  font-weight: 500;
+  color: rgba(255, 107, 107, 0.4);
+  text-shadow: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.compass-seconds .glow-number.active {
+  font-size: clamp(10px, 3vw, 16px);
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 5px rgba(255, 107, 107, 1),
+               0 0 15px rgba(255, 107, 107, 0.9),
+               0 0 30px rgba(255, 107, 107, 0.7);
+  animation: numberGlowRed 2s ease-in-out infinite;
+}
+
+.compass-seconds .glow-number.nearby {
+  font-size: clamp(5px, 1.2vw, 9px);
+  font-weight: 600;
+  color: rgba(255, 107, 107, 0.7);
+  text-shadow: 0 0 4px rgba(255, 107, 107, 0.4);
+}

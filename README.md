@@ -2,18 +2,20 @@
 
 一个美观、实用的 Chrome/Edge 浏览器新标签页扩展，支持自定义书签、快速访问和 WebDAV 同步功能。
 
-![版本](https://img.shields.io/badge/version-1.1-blue.svg)
+![版本](https://img.shields.io/badge/version-1.5.7-blue.svg)
 ![许可证](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## 功能特性
 
-- 美观的界面设计 - 简洁现代的新标签页布局
-- 自定义书签 - 添加、编辑、删除常用网站书签
-- 快速访问 - 一键访问你最常用的网站
-- WebDAV 同步 - 支持通过 WebDAV 同步书签到飞牛NAS等存储服务
-- 搜索功能 - 快速搜索书签和访问历史
-- 网站图标自动获取 - 自动获取并显示网站 favicon
-- 响应式设计 - 适配不同屏幕尺寸
+- **美观的界面设计** - 简洁现代的新标签页布局，玻璃态卡片效果
+- **自定义书签** - 添加、编辑、删除常用网站书签，支持拖拽排序
+- **快速访问** - 一键访问你最常用的网站
+- **WebDAV 同步** - 支持通过 WebDAV 同步书签到飞牛NAS等存储服务
+- **LOGO 搜索** - 编辑书签时可搜索并选择网站 LOGO 图标
+- **便签功能** - 内置便签系统，支持创建和管理多个便签
+- **访问统计** - 统计网站访问次数，点击卡片可直接访问
+- **滚动导航** - 支持滚轮/触摸滑动在主页、便签页、统计页之间切换
+- **响应式设计** - 适配不同屏幕尺寸
 
 ## 安装方法
 
@@ -30,9 +32,10 @@
 ### 基本操作
 
 - **添加书签**：点击页面上的"+"按钮或右键菜单
-- **编辑书签**：右键点击书签图标选择编辑
+- **编辑书签**：右键点击书签图标选择编辑，可搜索并选择 LOGO
 - **删除书签**：右键点击书签图标选择删除
-- **搜索**：使用页面顶部的搜索框快速查找书签
+- **拖拽排序**：长按书签卡片可拖拽调整位置
+- **页面导航**：滚轮滑动或点击底部导航切换页面
 
 ### WebDAV 同步设置
 
@@ -52,38 +55,92 @@
 
 ```
 新标签页/
-├── manifest.json          # 扩展配置文件
-├── newtab.html           # 新标签页主页面
-├── newtab.js             # 新标签页主逻辑
-├── popup.html            # 弹出窗口页面
-├── popup.js              # 弹出窗口逻辑
-├── background.js         # 后台服务脚本
-├── webdav.js             # WebDAV 同步功能
-├── js/                   # JavaScript 模块
-│   ├── main.js           # 主入口
-│   ├── UIManager.js      # UI 管理器
-│   ├── BookmarkManager.js # 书签管理器
-│   ├── SettingsManager.js # 设置管理器
-│   ├── SyncManager.js    # 同步管理器
-│   ├── StatsManager.js   # 统计管理器
-│   ├── BackupManager.js  # 备份管理器
-│   └── Compass.js        # 指南针组件
-├── images/               # 图标资源
+├── manifest.json              # 扩展配置文件
+├── newtab.html               # 新标签页主页面
+├── background.js             # 后台服务脚本
+├── css/                      # 样式文件
+│   ├── base.css              # 基础样式、变量
+│   ├── components.css        # 组件样式
+│   ├── pages.css             # 页面样式
+│   └── animations.css        # 动画样式
+├── js/                       # JavaScript 模块
+│   ├── main.js               # 主入口
+│   ├── UIManager.js          # UI 管理器
+│   ├── BookmarkManager.js    # 书签管理器
+│   ├── SettingsManager.js    # 设置管理器
+│   ├── StatsManager.js       # 统计管理器
+│   ├── BackupManager.js      # 备份管理器
+│   ├── StickyNoteManager.js  # 便签管理器
+│   ├── Compass.js            # 指南针组件
+│   ├── sync/                 # 同步模块
+│   │   ├── WebDAVClient.js   # WebDAV 客户端
+│   │   ├── DataMerger.js     # 数据合并
+│   │   ├── WebDAVSyncManager.js
+│   │   ├── AutoSyncManager.js
+│   │   └── index.js
+│   └── ui/                   # UI 模块
+│       ├── BookmarkRenderer.js
+│       ├── StickyNotesRenderer.js
+│       ├── StatsRenderer.js
+│       ├── PageNavigator.js
+│       ├── ScrollNavigator.js
+│       └── index.js
+├── images/                   # 图标资源
 │   ├── icon16.png
 │   ├── icon48.png
 │   └── icon128.png
-└── README.md             # 本文件
+└── README.md                 # 本文件
 ```
 
 ## 技术栈
 
 - **Manifest V3** - Chrome 扩展最新标准
 - **原生 JavaScript** - 无框架依赖，轻量高效
+- **ES6 Modules** - 模块化代码组织
 - **WebDAV API** - 实现数据同步功能
 - **Chrome Storage API** - 本地数据存储
-- **Chrome Bookmarks API** - 浏览器书签集成
+- **CSS Variables** - 主题样式管理
 
 ## 更新日志
+
+### v1.5.7
+- 统计页面卡片支持点击直接访问网站
+
+### v1.5.6
+- 修复对话框内滚动触发页面切换的问题
+
+### v1.5.5
+- 增加 LOGO 搜索结果数量（每个搜索引擎 20 个）
+
+### v1.5.4
+- 优化 LOGO 搜索结果布局，固定高度可滚动
+- 实现悬浮式放大预览面板，智能跟随定位
+
+### v1.5.3
+- 设计独立正方形预览面板
+
+### v1.5.2
+- 优化 LOGO 悬停放大效果
+
+### v1.5.1
+- LOGO 搜索界面添加悬停放大和选中边框效果
+
+### v1.5.0
+- 模块化重构：拆分 SyncManager、UIManager 为独立模块
+- CSS 提取为独立文件
+- 优化首页布局，减少常用网站行数
+
+### v1.4.0
+- 新增滚动导航功能
+- 支持滚轮/触摸滑动切换页面
+
+### v1.3.0
+- 新增便签功能
+- 新增访问统计页面
+
+### v1.2.0
+- 新增 LOGO 搜索功能
+- 支持从百度、搜狗、必应搜索网站图标
 
 ### v1.1
 - 新增 WebDAV 同步功能
@@ -98,11 +155,11 @@
 
 ## 开发计划
 
-- [ ] 支持主题切换（浅色/深色模式）
+- [x] 支持主题切换（浅色/深色模式）
+- [x] 添加访问统计图表
+- [x] 支持导入/导出书签
 - [ ] 添加更多搜索引擎选项
 - [ ] 支持书签文件夹分类
-- [ ] 添加访问统计图表
-- [ ] 支持导入/导出书签
 
 ## 贡献指南
 

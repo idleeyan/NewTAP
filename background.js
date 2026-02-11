@@ -107,7 +107,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // 从百度图片搜索logo
 function searchLogoFromBaidu(searchTerm, sendResponse) {
-    const searchUrl = `https://image.baidu.com/search/flip?tn=baiduimage&ie=utf-8&word=${encodeURIComponent(searchTerm + ' logo')}&pn=0&rn=20`;
+    const searchUrl = `https://image.baidu.com/search/flip?tn=baiduimage&ie=utf-8&word=${encodeURIComponent(searchTerm + ' logo')}&pn=0&rn=60`;
     
     fetch(searchUrl)
         .then(response => response.text())
@@ -118,7 +118,7 @@ function searchLogoFromBaidu(searchTerm, sendResponse) {
             let match;
             let count = 0;
             
-            while ((match = regex.exec(html)) && count < 10) {
+            while ((match = regex.exec(html)) && count < 20) {
                 try {
                     const logoUrl = match[1];
                     if (logoUrl) {
@@ -155,11 +155,10 @@ function searchLogoFromSogou(searchTerm, sendResponse, existingItems = []) {
             let match;
             let count = 0;
             
-            while ((match = regex.exec(html)) && count < 10) {
+            while ((match = regex.exec(html)) && count < 20) {
                 try {
                     let logoUrl = match[1];
                     if (logoUrl) {
-                        // 解码Unicode转义序列 (\u002F -> /)
                         logoUrl = logoUrl.replace(/\\u002F/g, '/');
                         const name = `${searchTerm}_sogou_${count + 1}`;
                         logoItems.push({ name, url: logoUrl });
@@ -196,15 +195,13 @@ function searchLogoFromBing(searchTerm, sendResponse, existingItems = []) {
             let match;
             let count = 0;
             
-            while ((match = regex.exec(html)) && count < 10) {
+            while ((match = regex.exec(html)) && count < 20) {
                 try {
                     let logoUrl = match[1];
                     if (logoUrl && logoUrl.startsWith('http')) {
-                        // 解码HTML实体
                         logoUrl = logoUrl.replace(/&amp;/g, '&');
                         const name = `${searchTerm}_bing_${count + 1}`;
                         
-                        // 避免重复
                         if (!logoItems.some(item => item.url === logoUrl)) {
                             logoItems.push({ name, url: logoUrl });
                             count++;

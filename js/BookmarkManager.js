@@ -111,11 +111,14 @@ export class BookmarkManager {
 
   async saveBookmarks() {
     try {
+      console.log('保存书签，数量:', this.customBookmarks.length);
+      console.log('书签访问数据:', this.customBookmarks.map(b => ({ name: b.name, visitCount: b.visitCount })));
       await chrome.storage.local.set({
         customBookmarks: this.customBookmarks,
         lastLocalModify: Date.now()
       });
       this.bookmarks = [...this.customBookmarks];
+      console.log('书签保存成功');
       return true;
     } catch (error) {
       console.error('保存书签失败:', error);
@@ -283,6 +286,10 @@ export class BookmarkManager {
       console.error(e);
       return [];
     }
+  }
+
+  getAllBookmarks() {
+    return this.bookmarks || [];
   }
 
   async exportData() {

@@ -1,31 +1,58 @@
-
 import { CompassClock } from './Compass.js';
+import { BookmarkRenderer, StickyNotesRenderer, StatsRenderer, PageNavigator, ScrollNavigator } from './ui/index.js';
 
 export class UIManager {
-  constructor(bookmarkManager, settingsManager, statsManager, syncManager, backupManager) {
+  constructor(bookmarkManager, settingsManager, statsManager, syncManager, backupManager, stickyNoteManager) {
     this.bookmarkManager = bookmarkManager;
     this.settingsManager = settingsManager;
     this.statsManager = statsManager;
     this.syncManager = syncManager;
     this.backupManager = backupManager;
+    this.stickyNoteManager = stickyNoteManager;
 
     this.compassClock = new CompassClock();
+
+    this.bookmarkRenderer = new BookmarkRenderer(
+      bookmarkManager,
+      settingsManager,
+      statsManager,
+      this.compassClock
+    );
+
+    this.stickyNotesRenderer = new StickyNotesRenderer(stickyNoteManager);
+    this.statsRenderer = new StatsRenderer(bookmarkManager);
+    this.pageNavigator = new PageNavigator();
+    this.scrollNavigator = new ScrollNavigator(this.pageNavigator, {
+      threshold: 50,
+      debounceDelay: 300,
+      animationDuration: 400,
+      enableHistory: true
+    });
   }
 
   init() {
-    this.setupMoreBookmarksToggle();
     this.setupAddBookmarkDialogListeners();
     this.setupContextMenu();
     this.setupLogoSearch();
     this.setupSettingsDialogListeners();
     this.setupBackupUI();
+    this.setupPageSwipe();
+    this.setupStickyNotes();
+    this.scrollNavigator.setup();
 
-    // Listen for settings changes to update layout
     this.settingsManager.onSettingChange = (key, value) => {
       if (key === 'cardSize' || key === 'cardShape' || key === 'sortBy') {
         this.renderBookmarks();
       }
     };
+
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        this.renderBookmarks();
+      }, 200);
+    });
   }
 
   setupSettingsDialogListeners() {
@@ -34,12 +61,10 @@ export class UIManager {
     const cancelBtn = document.getElementById('cancelSettingsBtn');
     const exportBtn = document.querySelector('#settingsDialog .dialog-btn[style*="76,175,80"]');
     const importBtn = document.querySelector('#settingsDialog .dialog-btn[style*="255,152,0"]');
-    const viewStatsBtn = document.getElementById('viewStatsBtn');
 
     if (btn && dialog) {
       btn.addEventListener('click', () => {
         dialog.classList.add('active');
-        // Re-setup controls to ensure they reflect current state
         this.settingsManager.setupUI();
       });
 
@@ -55,311 +80,38 @@ export class UIManager {
     }
 
     if (exportBtn) {
-        // Cloning to remove old listeners not strictly necessary if we are careful,
-        // but safe practice in re-init scenarios. Here we just add listener.
-        exportBtn.onclick = () => this.bookmarkManager.exportData(); // Assuming exportData exists
-        // Wait, exportData was in UIManager before, let's check BookmarkManager
-        // It's not in BookmarkManager in my previous step, I need to add it there or here.
-        // Let's implement export here using BookmarkManager data
+      exportBtn.onclick = () => this.bookmarkManager.exportData();
     }
 
     if (importBtn) {
       const fileInput = document.getElementById('importFileInput');
       if (fileInput) {
-          importBtn.onclick = () => fileInput.click();
-          fileInput.onchange = (e) => this.handleImport(e);
+        importBtn.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => this.handleImport(e);
       }
-    }
-
-    if (viewStatsBtn) {
-      viewStatsBtn.onclick = () => this.statsManager.show(this.bookmarkManager.bookmarks);
     }
   }
 
   async handleImport(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      try {
-          const text = await file.text();
-          const data = JSON.parse(text);
-          if (data.customBookmarks) {
-              await chrome.storage.local.set({ customBookmarks: data.customBookmarks });
-              await this.bookmarkManager.loadBookmarks();
-              this.renderBookmarks();
-              alert('导入成功！');
-          }
-      } catch (e) {
-          alert('导入失败: ' + e.message);
-      }
-      event.target.value = '';
-  }
-
-  async renderBookmarks() {
-    const topGrid = document.getElementById('topBookmarksGrid');
-    const moreGrid = document.getElementById('moreBookmarksGrid');
-    const topCountEl = document.getElementById('topBookmarksCount');
-    const moreSection = document.getElementById('moreBookmarksSection');
-
-    if (!topGrid) return;
-
-    topGrid.innerHTML = '';
-    if (moreGrid) moreGrid.innerHTML = '';
-
-    const cardSize = this.settingsManager.cardSize;
-    const cardShape = this.settingsManager.cardShape;
-    const sortBy = this.settingsManager.sortBy;
-
-    topGrid.className = `bookmarks-grid ${cardSize}`;
-    if (moreGrid) moreGrid.className = `bookmarks-grid ${cardSize}`;
-
-    let sortedBookmarks = [...this.bookmarkManager.bookmarks];
-
-    switch (sortBy) {
-      case 'name':
-        sortedBookmarks.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
-        break;
-      case 'visits':
-        sortedBookmarks.sort((a, b) => (b.visitCount || 0) - (a.visitCount || 0));
-        break;
-      case 'recent':
-        sortedBookmarks.sort((a, b) => (b.lastVisit || 0) - (a.lastVisit || 0));
-        break;
-      case 'default':
-      default:
-        sortedBookmarks.sort((a, b) => (a.index || 0) - (b.index || 0));
-        break;
-    }
-
-    const cardsPerRow = this.calculateCardsPerRow(cardSize);
-    const topRowCount = 5;
-    const topCardsCount = cardsPerRow * topRowCount;
-
-    const topBookmarks = sortedBookmarks.slice(0, topCardsCount);
-    const moreBookmarks = sortedBookmarks.slice(topCardsCount);
-
-    if (topCountEl) {
-      topCountEl.textContent = `${topBookmarks.length}个网站`;
-    }
-
-    if (moreSection) {
-      moreSection.style.display = moreBookmarks.length > 0 ? 'block' : 'none';
-    }
-
-    const topFragment = document.createDocumentFragment();
-    topBookmarks.forEach((bookmark, index) => {
-      topFragment.appendChild(this.createBookmarkElement(bookmark, index, true, cardShape));
-    });
-
-    // Add Button (Compass)
-    const addBtn = document.createElement('div');
-    addBtn.className = 'bookmark-item add-bookmark animate-in';
-    addBtn.style.animationDelay = `${Math.min(topBookmarks.length, 15) * 0.05}s`;
-    addBtn.id = 'compassAddBtn';
-    addBtn.innerHTML = `
-      <div class="compass-clock" id="compassClockInBtn">
-        <div class="compass-ring compass-hours" id="compassHoursBtn"></div>
-        <div class="compass-ring compass-minutes" id="compassMinutesBtn"></div>
-        <div class="compass-ring compass-seconds" id="compassSecondsBtn"></div>
-        <div class="compass-center">
-          <div class="compass-date" id="compassDateBtn">1/1</div>
-          <div class="compass-weekday" id="compassWeekdayBtn">周一</div>
-        </div>
-      </div>
-      <div class="bookmark-title">添加网站</div>
-    `;
-    addBtn.addEventListener('click', () => this.showAddBookmarkDialog());
-    topFragment.appendChild(addBtn);
-
-    topGrid.appendChild(topFragment);
-
-    // Initialize compass inside the button after it's added to DOM
-    setTimeout(() => {
-        this.compassClock.initCompassInButton();
-    }, 0);
-
-    if (moreGrid && moreBookmarks.length > 0) {
-      const moreFragment = document.createDocumentFragment();
-      moreBookmarks.forEach((bookmark, index) => {
-        moreFragment.appendChild(this.createBookmarkElement(bookmark, index + topCardsCount, false, cardShape));
-      });
-      moreGrid.appendChild(moreFragment);
-    }
-  }
-
-  createBookmarkElement(bookmark, index, isTopSection, cardShape) {
-    const el = document.createElement('div');
-    el.className = `bookmark-item ${cardShape} animate-in`;
-    const delay = Math.min(index, 15) * 0.05;
-    el.style.animationDelay = `${delay}s`;
-
-    el.draggable = true;
-    el.dataset.index = index;
-    el.dataset.url = bookmark.url;
-    el.innerHTML = `
-      <div class="bookmark-title">${bookmark.name}</div>
-    `;
-
-    const style = document.createElement('style');
-    style.textContent = `
-      .bookmark-item[data-url="${bookmark.url}"]::before {
-        background-image: url('${bookmark.icon}');
-      }
-    `;
-    el.appendChild(style);
-
-    el.addEventListener('click', async () => {
-      // Record stats
-      // We modify the bookmark object directly here, then save
-      // Ideally this logic belongs in StatsManager or BookmarkManager, but UIManager coordinates it
-      // Let's use StatsManager helper
-      // Wait, we need to update the bookmark object in the manager
-
-      // Update local object
-      const updatedBookmark = this.statsManager.constructor.recordVisit(bookmark);
-
-      // Save changes
-      // We need to find it in the manager's list and update it
-      // Actually bookmark is a reference to the object in the list, so it is already updated?
-      // Yes, JS objects are references. We just need to trigger save.
-      await this.bookmarkManager.saveBookmarks();
-
-      window.open(bookmark.url, '_self');
-    });
-
-    el.addEventListener('contextmenu', (e) => this.showContextMenu(e, bookmark.url));
-
-    // Drag and Drop implementation
-    this.setupDragEvents(el, bookmark, index);
-
-    return el;
-  }
-
-  setupDragEvents(el, bookmark, index) {
-    el.addEventListener('dragstart', (e) => {
-      // Only allow dragging in default sort mode
-      if (this.settingsManager.sortBy !== 'default') {
-        e.preventDefault();
-        return;
-      }
-
-      el.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', index);
-
-      // Create a custom drag image if needed, or use default
-      // e.dataTransfer.setDragImage(el, 0, 0);
-    });
-
-    el.addEventListener('dragend', () => {
-      el.classList.remove('dragging');
-      document.querySelectorAll('.bookmark-item').forEach(item => {
-        item.classList.remove('drag-over');
-      });
-    });
-
-    el.addEventListener('dragover', (e) => {
-      if (this.settingsManager.sortBy !== 'default') return;
-
-      e.preventDefault(); // Necessary to allow dropping
-      e.dataTransfer.dropEffect = 'move';
-
-      const draggingItem = document.querySelector('.dragging');
-      if (draggingItem !== el) {
-        el.classList.add('drag-over');
-      }
-    });
-
-    el.addEventListener('dragleave', () => {
-      el.classList.remove('drag-over');
-    });
-
-    el.addEventListener('drop', async (e) => {
-      if (this.settingsManager.sortBy !== 'default') return;
-
-      e.preventDefault();
-      el.classList.remove('drag-over');
-
-      const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-      const toIndex = index;
-
-      if (fromIndex !== toIndex) {
-        // Perform reorder
-        const success = await this.bookmarkManager.reorderBookmarks(fromIndex, toIndex);
-        if (success) {
-          this.renderBookmarks();
-        }
-      }
-    });
-  }
-
-  calculateCardsPerRow(cardSize) {
-    const container = document.querySelector('.bookmarks-section');
-    if (!container) return 5;
-
-    const containerWidth = container.clientWidth - 60;
-
-    let cardMinWidth;
-    switch (cardSize) {
-      case 'small': cardMinWidth = 120; break;
-      case 'large': cardMinWidth = 180; break;
-      case 'medium': default: cardMinWidth = 150; break;
-    }
-
-    const gap = 22;
-    const cardsPerRow = Math.floor((containerWidth + gap) / (cardMinWidth + gap));
-
-    return Math.max(1, cardsPerRow);
-  }
-
-  setupMoreBookmarksToggle() {
-    const section = document.getElementById('moreBookmarksSection');
-    const header = document.getElementById('moreBookmarksHeader');
-    const wrapper = document.getElementById('moreBookmarksWrapper');
-    const icon = document.getElementById('toggleMoreIcon');
-
-    if (!header || !wrapper || !section) return;
-
-    const toggle = (forceState) => {
-      const isExpanded = wrapper.classList.contains('expanded');
-      const shouldExpand = forceState !== undefined ? forceState : !isExpanded;
-
-      if (shouldExpand) {
-        wrapper.classList.add('expanded');
-        header.classList.add('expanded');
-        icon.textContent = '▲';
-      } else {
-        wrapper.classList.remove('expanded');
-        header.classList.remove('expanded');
-        icon.textContent = '▼';
-      }
-    };
-
-    header.addEventListener('click', () => toggle());
-
-    let hoverTimer;
-    let leaveTimer;
-
-    section.addEventListener('mouseenter', () => {
-      clearTimeout(leaveTimer);
-      if (!wrapper.classList.contains('expanded')) {
-        hoverTimer = setTimeout(() => toggle(true), 200);
-      }
-    });
-
-    section.addEventListener('mouseleave', () => {
-      clearTimeout(hoverTimer);
-      if (wrapper.classList.contains('expanded')) {
-        leaveTimer = setTimeout(() => toggle(false), 600);
-      }
-    });
-
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
+    const file = event.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (data.customBookmarks) {
+        await chrome.storage.local.set({ customBookmarks: data.customBookmarks });
+        await this.bookmarkManager.loadBookmarks();
         this.renderBookmarks();
-      }, 200);
-    });
+        alert('导入成功！');
+      }
+    } catch (e) {
+      alert('导入失败: ' + e.message);
+    }
+    event.target.value = '';
+  }
+
+  renderBookmarks() {
+    this.bookmarkRenderer.render();
   }
 
   setupAddBookmarkDialogListeners() {
@@ -476,7 +228,6 @@ export class UIManager {
     }
   }
 
-  // Context Menu
   setupContextMenu() {
     const menu = document.getElementById('contextMenu');
     if (!menu) return;
@@ -494,19 +245,6 @@ export class UIManager {
 
     document.addEventListener('click', closeMenu);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
-  }
-
-  showContextMenu(e, url) {
-    const menu = document.getElementById('contextMenu');
-    if (!menu) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    menu.style.left = e.clientX + 'px';
-    menu.style.top = e.clientY + 'px';
-    menu.classList.add('active');
-    menu.dataset.url = url;
   }
 
   async handleContextAction(action, url) {
@@ -541,12 +279,10 @@ export class UIManager {
     document.getElementById('editUrl').value = bookmark.url;
     document.getElementById('editIcon').value = bookmark.icon || '';
 
-    // Setup logo search for edit
     const searchInput = document.getElementById('logoSearchInput');
     if (searchInput) searchInput.value = bookmark.name || '';
     document.getElementById('logoSearchResults').innerHTML = '';
 
-    // Remove old listeners by cloning
     const newForm = form.cloneNode(true);
     form.parentNode.replaceChild(newForm, form);
 
@@ -570,8 +306,6 @@ export class UIManager {
     });
 
     dialog.classList.add('active');
-
-    // Re-bind logo search button since we might have replaced elements or lost context
     this.setupLogoSearch();
   }
 
@@ -580,17 +314,16 @@ export class UIManager {
     const logoSearchInput = document.getElementById('logoSearchInput');
 
     if (logoSearchBtn && logoSearchInput) {
-       // Clone to remove old listeners
-       const newBtn = logoSearchBtn.cloneNode(true);
-       logoSearchBtn.parentNode.replaceChild(newBtn, logoSearchBtn);
+      const newBtn = logoSearchBtn.cloneNode(true);
+      logoSearchBtn.parentNode.replaceChild(newBtn, logoSearchBtn);
 
-       const newInput = logoSearchInput.cloneNode(true);
-       logoSearchInput.parentNode.replaceChild(newInput, logoSearchInput);
+      const newInput = logoSearchInput.cloneNode(true);
+      logoSearchInput.parentNode.replaceChild(newInput, logoSearchInput);
 
-       newBtn.addEventListener('click', () => this.performLogoSearch());
-       newInput.addEventListener('keypress', (e) => {
-         if (e.key === 'Enter') this.performLogoSearch();
-       });
+      newBtn.addEventListener('click', () => this.performLogoSearch());
+      newInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') this.performLogoSearch();
+      });
     }
   }
 
@@ -614,7 +347,6 @@ export class UIManager {
       });
     }
 
-    // Refresh list when settings dialog opens
     const settingsBtn = document.getElementById('settingsButton');
     if (settingsBtn) {
       settingsBtn.addEventListener('click', () => {
@@ -667,7 +399,6 @@ export class UIManager {
           const success = await this.backupManager.restoreBackup(backup.id);
           if (success) {
             this.renderBookmarks();
-            // Re-apply background settings immediately
             this.settingsManager.applyBackground();
             alert('恢复成功！');
           } else {
@@ -721,22 +452,135 @@ export class UIManager {
       return;
     }
 
-    let html = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;">';
-    items.forEach(item => {
+    let floatingPreview = document.getElementById('logoFloatingPreview');
+    if (!floatingPreview) {
+      floatingPreview = document.createElement('div');
+      floatingPreview.id = 'logoFloatingPreview';
+      floatingPreview.className = 'logo-preview-floating';
+      floatingPreview.innerHTML = `
+        <div class="preview-content">
+          <img src="" alt="预览" id="logoFloatingImg">
+          <div class="preview-name" id="logoFloatingName"></div>
+        </div>
+      `;
+      document.body.appendChild(floatingPreview);
+    }
+
+    const previewImg = document.getElementById('logoFloatingImg');
+    const previewName = document.getElementById('logoFloatingName');
+
+    let html = `<div class="logo-grid">`;
+    items.forEach((item, index) => {
       html += `
-        <div class="result-item" data-url="${item.url}" style="cursor:pointer;text-align:center;">
-           <img src="${item.url}" style="width:40px;height:40px;object-fit:contain;">
-           <div style="font-size:10px;overflow:hidden;width:50px;white-space:nowrap;">${item.name}</div>
+        <div class="logo-result-item" data-url="${item.url}" data-index="${index}">
+           <img src="${item.url}" alt="${item.name}" loading="lazy">
+           <div class="logo-name">${item.name}</div>
         </div>
       `;
     });
-    html += '</div>';
+    html += `</div>`;
     container.innerHTML = html;
 
-    container.querySelectorAll('.result-item').forEach(item => {
+    const updatePreviewPosition = (item) => {
+      const rect = item.getBoundingClientRect();
+      const previewWidth = 180;
+      const previewHeight = 180;
+      const padding = 15;
+      
+      let left = rect.right + padding;
+      let top = rect.top + (rect.height / 2) - (previewHeight / 2);
+      
+      if (left + previewWidth + padding > window.innerWidth) {
+        left = rect.left - previewWidth - padding;
+      }
+      
+      if (left < padding) {
+        left = padding;
+      }
+      
+      if (top < padding) {
+        top = padding;
+      }
+      
+      if (top + previewHeight + padding > window.innerHeight) {
+        top = window.innerHeight - previewHeight - padding;
+      }
+      
+      floatingPreview.style.left = `${left}px`;
+      floatingPreview.style.top = `${top}px`;
+    };
+
+    container.querySelectorAll('.logo-result-item').forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        const url = item.dataset.url;
+        const name = item.querySelector('.logo-name').textContent;
+        
+        previewImg.src = url;
+        previewName.textContent = name;
+        
+        updatePreviewPosition(item);
+        floatingPreview.classList.add('active');
+      });
+
+      item.addEventListener('mousemove', () => {
+        updatePreviewPosition(item);
+      });
+
+      item.addEventListener('mouseleave', () => {
+        floatingPreview.classList.remove('active');
+      });
+
       item.addEventListener('click', () => {
+        container.querySelectorAll('.logo-result-item').forEach(i => {
+          i.classList.remove('selected');
+        });
+        item.classList.add('selected');
         document.getElementById('editIcon').value = item.dataset.url;
       });
     });
+
+    const grid = container.querySelector('.logo-grid');
+    if (grid) {
+      grid.addEventListener('scroll', () => {
+        const hoveredItem = container.querySelector('.logo-result-item:hover');
+        if (hoveredItem) {
+          updatePreviewPosition(hoveredItem);
+        } else {
+          floatingPreview.classList.remove('active');
+        }
+      });
+    }
+  }
+
+  setupPageSwipe() {
+    this.pageNavigator.setup(
+      () => this.renderNotes(),
+      () => {},
+      () => this.renderStats(),
+      () => {}
+    );
+  }
+
+  renderNotes() {
+    this.stickyNotesRenderer.render();
+  }
+
+  renderStats() {
+    this.statsRenderer.render();
+  }
+
+  setupStickyNotes() {
+    const addBtn = document.getElementById('addNoteBtn');
+    if (addBtn) {
+      addBtn.addEventListener('click', async () => {
+        const note = await this.stickyNoteManager.createNote();
+        this.renderNotes();
+
+        setTimeout(() => {
+          const titleInput = document.querySelector(`[data-note-id="${note.id}"] .note-title-input`);
+          if (titleInput) titleInput.focus();
+        }, 100);
+      });
+    }
   }
 }
