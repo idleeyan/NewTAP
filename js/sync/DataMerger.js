@@ -56,7 +56,7 @@ export class DataMerger {
     return merged;
   }
 
-  static mergeSettings(localSettings, serverSettings) {
+  static mergeSettings(localSettings, serverSettings, localTimestamp = 0, serverTimestamp = 0) {
     const merged = {};
 
     const settingsKeys = ['bookmarkCardSize', 'bookmarkCardShape', 'bookmarkSortBy'];
@@ -67,7 +67,7 @@ export class DataMerger {
 
       if (localValue !== undefined && serverValue !== undefined) {
         if (localValue !== serverValue) {
-          merged[key] = serverValue;
+          merged[key] = localTimestamp >= serverTimestamp ? localValue : serverValue;
         } else {
           merged[key] = localValue;
         }
@@ -106,14 +106,32 @@ export class DataMerger {
     return merged.filter(item => item.deletedAt > thirtyDaysAgo);
   }
 
-  static mergeStickyNotes(localNotes, serverNotes) {
+  static mergeStickyNotes(localNotes, serverNotes, localDeleted = [], serverDeleted = []) {
     const merged = [];
     const idMap = new Map();
+    const deletedIds = new Set();
+
+    const allDeleted = [...(localDeleted || []), ...(serverDeleted || [])];
+    allDeleted.forEach(item => {
+      if (item.id) deletedIds.add(item.id);
+    });
 
     const allNotes = [...(localNotes || []), ...(serverNotes || [])];
 
     allNotes.forEach(note => {
       if (!note || !note.id) return;
+
+      if (deletedIds.has(note.id)) {
+        const localDeletedTime = localDeleted.find(d => d.id === note.id)?.deletedAt || 0;
+        const serverDeletedTime = serverDeleted.find(d => d.id === note.id)?.deletedAt || 0;
+        const noteTime = note.updatedAt || note.createdAt || 0;
+
+        if (noteTime > Math.max(localDeletedTime, serverDeletedTime)) {
+          deletedIds.delete(note.id);
+        } else {
+          return;
+        }
+      }
 
       const existing = idMap.get(note.id);
       if (existing) {
@@ -133,6 +151,31 @@ export class DataMerger {
     merged.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
 
     return merged;
+  }
+
+  static mergeDeletedStickyNotes(localDeleted, serverDeleted) {
+    const merged = [];
+    const idMap = new Map();
+
+    const allDeleted = [...(localDeleted || []), ...(serverDeleted || [])];
+
+    allDeleted.forEach(item => {
+      if (!item || !item.id) return;
+
+      const existing = idMap.get(item.id);
+      if (existing) {
+        if (item.deletedAt > existing.deletedAt) {
+          idMap.set(item.id, { ...item });
+        }
+      } else {
+        idMap.set(item.id, { ...item });
+      }
+    });
+
+    idMap.forEach(item => merged.push(item));
+
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    return merged.filter(item => item.deletedAt > thirtyDaysAgo);
   }
 
   static hasDataChanged(localData, mergedData) {

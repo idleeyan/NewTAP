@@ -53,14 +53,15 @@ export class WebDAVSyncManager {
         'bookmarkSortBy',
         'lastLocalModify',
         'deletedBookmarks',
-        'stickyNotes'
+        'stickyNotes',
+        'deletedStickyNotes'
       ]);
 
       const serverResult = await this.client.downloadData();
 
       if (!serverResult.success) {
-        if (serverResult.error && (serverResult.error.includes('404') || serverResult.error.includes('服务器上没有同步数据'))) {
-          console.log('服务器没有数据，上传本地数据');
+        if (serverResult.error && (serverResult.error.includes('404') || serverResult.error.includes('服务器上没有同步数据') || serverResult.error.includes('解析数据失败'))) {
+          console.log('服务器没有数据或数据损坏，上传本地数据');
           return await this.syncToCloud();
         }
         return serverResult;
@@ -97,18 +98,28 @@ export class WebDAVSyncManager {
           bookmarkCardSize: serverData.bookmarkCardSize,
           bookmarkCardShape: serverData.bookmarkCardShape,
           bookmarkSortBy: serverData.bookmarkSortBy
-        }
+        },
+        localTimestamp,
+        serverTimestamp
       );
+
+      const localDeletedNotes = localData.deletedStickyNotes || [];
+      const serverDeletedNotes = serverData.deletedStickyNotes || [];
 
       const mergedStickyNotes = DataMerger.mergeStickyNotes(
         localData.stickyNotes,
-        serverData.stickyNotes
+        serverData.stickyNotes,
+        localDeletedNotes,
+        serverDeletedNotes
       );
+
+      const mergedDeletedNotes = DataMerger.mergeDeletedStickyNotes(localDeletedNotes, serverDeletedNotes);
 
       const mergedData = {
         customBookmarks: mergedBookmarks,
         deletedBookmarks: mergedDeleted,
         stickyNotes: mergedStickyNotes,
+        deletedStickyNotes: mergedDeletedNotes,
         ...mergedSettings
       };
 
@@ -133,6 +144,7 @@ export class WebDAVSyncManager {
           customBookmarks: mergedBookmarks,
           deletedBookmarks: mergedDeleted,
           stickyNotes: mergedStickyNotes,
+          deletedStickyNotes: mergedDeletedNotes,
           bookmarkCardSize: mergedSettings.bookmarkCardSize,
           bookmarkCardShape: mergedSettings.bookmarkCardShape,
           bookmarkSortBy: mergedSettings.bookmarkSortBy,
@@ -178,7 +190,8 @@ export class WebDAVSyncManager {
         'bookmarkCardSize',
         'bookmarkCardShape',
         'bookmarkSortBy',
-        'stickyNotes'
+        'stickyNotes',
+        'deletedStickyNotes'
       ]);
 
       const success = await this.client.uploadData(data);
@@ -231,6 +244,9 @@ export class WebDAVSyncManager {
       }
       if (data.stickyNotes !== undefined) {
         await chrome.storage.local.set({ stickyNotes: data.stickyNotes });
+      }
+      if (data.deletedStickyNotes !== undefined) {
+        await chrome.storage.local.set({ deletedStickyNotes: data.deletedStickyNotes });
       }
 
       this.lastSyncTime = Date.now();

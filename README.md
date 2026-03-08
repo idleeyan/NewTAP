@@ -2,7 +2,7 @@
 
 一个美观、实用的 Chrome/Edge 浏览器新标签页扩展，支持自定义书签、快速访问和 WebDAV 同步功能。
 
-![版本](https://img.shields.io/badge/version-1.5.7-blue.svg)
+![版本](https://img.shields.io/badge/version-1.6.0-blue.svg)
 ![许可证](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## 功能特性
@@ -102,6 +102,14 @@
 - **CSS Variables** - 主题样式管理
 
 ## 更新日志
+
+### v1.6.0
+- 修复 WebDAV 同步时卡片大小和形状设置被还原的问题
+- 设置合并逻辑现在根据时间戳判断，优先保留较新的修改
+- 清理遗留的旧版 webdav.js 文件
+
+### v1.5.8
+- 扩展名称更改为 NewTap
 
 ### v1.5.7
 - 统计页面卡片支持点击直接访问网站

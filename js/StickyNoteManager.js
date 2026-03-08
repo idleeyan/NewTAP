@@ -111,7 +111,21 @@ export class StickyNoteManager {
     const index = this.notes.findIndex(n => n.id === id);
     if (index === -1) return false;
 
+    const deletedNote = this.notes[index];
     this.notes.splice(index, 1);
+
+    try {
+      const result = await chrome.storage.local.get('deletedStickyNotes');
+      const deletedNotes = result.deletedStickyNotes || [];
+      deletedNotes.push({
+        id: deletedNote.id,
+        deletedAt: Date.now()
+      });
+      await chrome.storage.local.set({ deletedStickyNotes: deletedNotes });
+    } catch (e) {
+      console.error('记录已删除便签失败:', e);
+    }
+
     await this.saveNotes();
     return true;
   }
