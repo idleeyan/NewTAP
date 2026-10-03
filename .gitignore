@@ -8,6 +8,14 @@
 .workbuddy/
 .worktree/
 
+# ===== 工具脚手架 / 归档（与扩展运行无关）=====
+# 某次LOGO 生成技能的旧归档，功能已被 generate_logos.py + images/logos/ 取代
+.skill-archive/
+# 某规格工作流工具的模板脚手架
+.spec-workflow/
+# 打包的技能 zip（旧 WebDAV 参考副本，代码已在 js/sync/）
+*.skill
+
 # ===== 打包产物 =====
 # 发布包走 GitHub Release，不入库
 *.zip
