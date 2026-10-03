@@ -4,9 +4,18 @@
 *-sync-conflict-*
 *.sync-conflict-*
 
-# ===== 本地 AI 工作记忆 =====
+# ===== AI 协作记忆与规则（本地私有，不入库）=====
+# 工作记忆、项目记录、踩坑笔记
 .workbuddy/
 .worktree/
+# AI 工具的规则文件（版本号强制更新等约定，属个人工作习惯）
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.cursorrules
+.cursor/
+.claude/
+.aider*
 
 # ===== 工具脚手架 / 归档（与扩展运行无关）=====
 # 某次LOGO 生成技能的旧归档，功能已被 generate_logos.py + images/logos/ 取代
