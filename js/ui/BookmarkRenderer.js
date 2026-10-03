@@ -1,12 +1,58 @@
+import { iconCache } from '../IconCache.js';
+
 export class BookmarkRenderer {
-  constructor(bookmarkManager, settingsManager, statsManager, compassClock) {
+  constructor(bookmarkManager, settingsManager, statsManager) {
     this.bookmarkManager = bookmarkManager;
     this.settingsManager = settingsManager;
     this.statsManager = statsManager;
-    this.compassClock = compassClock;
+    this._clockInterval = null;
+    this._lastRenderKey = '';
+    this._pendingRender = false;
+  }
+
+  /**
+   * 生成渲染缓存键，用于跳过无变化的重复渲染
+   * 必须包含名称与图标内容指纹：仅比较“是否已缓存”会导致换 logo/改名后跳过重绘
+   * @private
+   */
+  _buildRenderKey() {
+    const bookmarks = this.bookmarkManager.bookmarks;
+    const container = document.querySelector('.bookmarks-section');
+    this._lastContainerWidth = container ? container.clientWidth : 0;
+    const widthBucket = Math.round(this._lastContainerWidth / 50);
+    let dataHash = '';
+    for (const b of bookmarks) {
+      const icon = b.icon || '';
+      // data URI 很长，用长度+尾部做指纹；URL 直接参与
+      const iconFp = icon.startsWith('data:')
+        ? `d${icon.length}:${icon.slice(-32)}`
+        : `u${icon}`;
+      const iconResolved = iconCache.getFromMemory(b.icon) ? '1' : '0';
+      dataHash += `${b.url}|${b.name || ''}|${iconFp}|${b.visitCount || 0}|${b.lastVisit || 0}|${iconResolved}|${b.index || 0};`;
+    }
+    return `${bookmarks.length}|${this.settingsManager.cardSize}|${this.settingsManager.cardShape}|${this.settingsManager.sortBy}|${widthBucket}|${dataHash}`;
+  }
+
+  /** 强制下次 render 真正重建 DOM（编辑/同步后使用） */
+  invalidate() {
+    this._lastRenderKey = '';
   }
 
   render() {
+    const renderKey = this._buildRenderKey();
+    if (renderKey === this._lastRenderKey) return;
+
+    if (this._pendingRender) return;
+    this._pendingRender = true;
+
+    requestAnimationFrame(() => {
+      this._pendingRender = false;
+      this._lastRenderKey = this._buildRenderKey();
+      this._doRender();
+    });
+  }
+
+  _doRender() {
     const topGrid = document.getElementById('topBookmarksGrid');
     const moreGrid = document.getElementById('moreBookmarksGrid');
     const topCountEl = document.getElementById('topBookmarksCount');
@@ -43,7 +89,7 @@ export class BookmarkRenderer {
         break;
     }
 
-    const cardsPerRow = this.calculateCardsPerRow(cardSize);
+    const cardsPerRow = this.calculateCardsPerRow(cardSize, this._lastContainerWidth);
     const topRowCount = 4;
     const topCardsCount = cardsPerRow * topRowCount - 1;
 
@@ -68,22 +114,20 @@ export class BookmarkRenderer {
     });
 
     const addBtn = document.createElement('div');
-    addBtn.className = 'bookmark-item add-bookmark animate-in';
+    addBtn.className = 'bookmark-wrapper add-bookmark animate-in';
     addBtn.style.animationDelay = `${Math.min(topBookmarks.length, 15) * 0.01}s`;
     addBtn.id = 'compassAddBtn';
     addBtn.innerHTML = `
-      <div class="compass-clock" id="compassClockInBtn">
-        <div class="compass-ring compass-hours" id="compassHoursBtn"></div>
-        <div class="compass-ring compass-minutes" id="compassMinutesBtn"></div>
-        <div class="compass-ring compass-seconds" id="compassSecondsBtn"></div>
-        <div class="compass-center">
-          <div class="compass-date" id="compassDateBtn">1/1</div>
-          <div class="compass-weekday" id="compassWeekdayBtn">周一</div>
+      <div class="bookmark-card">
+        <div class="add-plus" aria-hidden="true">+</div>
+        <div class="digital-clock">
+          <div class="digital-time" id="digitalTime">00:00</div>
+          <div class="digital-date" id="digitalDate">1/1 周一</div>
         </div>
       </div>
       <div class="bookmark-title">添加网站</div>
     `;
-    addBtn.addEventListener('click', () => {
+    addBtn.querySelector('.bookmark-card').addEventListener('click', () => {
       const dialog = document.getElementById('addBookmarkDialog');
       if (dialog) {
         dialog.classList.add('active');
@@ -96,9 +140,7 @@ export class BookmarkRenderer {
 
     topGrid.appendChild(topFragment);
 
-    setTimeout(() => {
-      this.compassClock.initCompassInButton();
-    }, 0);
+    this._startDigitalClock();
 
     if (moreGrid && moreBookmarks.length > 0) {
       const moreFragment = document.createDocumentFragment();
@@ -110,42 +152,42 @@ export class BookmarkRenderer {
   }
 
   createBookmarkElement(bookmark, index, isTopSection, cardShape) {
-    const el = document.createElement('div');
-    el.className = `bookmark-item ${cardShape} animate-in`;
+    const wrapper = document.createElement('div');
+    wrapper.className = `bookmark-wrapper animate-in`;
     const delay = Math.min(index, 15) * 0.01;
-    el.style.animationDelay = `${delay}s`;
+    wrapper.style.animationDelay = `${delay}s`;
 
-    el.draggable = true;
-    el.dataset.index = index;
-    el.dataset.url = bookmark.url;
-    el.innerHTML = `
-      <div class="bookmark-title">${bookmark.name}</div>
-    `;
+    wrapper.draggable = true;
+    wrapper.dataset.index = index;
+    wrapper.dataset.url = bookmark.url;
 
-    const style = document.createElement('style');
-    style.textContent = `
-      .bookmark-item[data-url="${bookmark.url}"]::before {
-        background-image: url('${bookmark.icon}');
-      }
-    `;
-    el.appendChild(style);
+    const card = document.createElement('div');
+    card.className = `bookmark-card ${cardShape}`;
+    if (bookmark.icon) {
+      // 优先使用缓存的 data URI（即时显示），未缓存时回退到原始 URL（网络加载）
+      const iconSrc = iconCache.getFromMemory(bookmark.icon) || bookmark.icon;
+      card.style.backgroundImage = `url('${iconSrc.replace(/'/g, "\\'")}')`;
+    }
 
-    el.addEventListener('click', async () => {
+    const title = document.createElement('div');
+    title.className = 'bookmark-title';
+    title.textContent = bookmark.name;
+
+    wrapper.appendChild(card);
+    wrapper.appendChild(title);
+
+    card.addEventListener('click', () => {
+      // 先跳转，确保用户操作即时响应；统计与保存在后台异步执行
+      window.open(bookmark.url, '_self');
       const originalBookmark = this.bookmarkManager.customBookmarks.find(b => b.url === bookmark.url);
-      console.log('点击书签:', bookmark.name, '找到原始书签:', !!originalBookmark);
       if (originalBookmark) {
         this.statsManager.constructor.recordVisit(originalBookmark);
-        console.log('访问计数更新为:', originalBookmark.visitCount);
-        await this.bookmarkManager.saveBookmarks();
-        console.log('书签已保存');
-      } else {
-        console.warn('未找到原始书签，URL:', bookmark.url);
-        console.log('customBookmarks:', this.bookmarkManager.customBookmarks.map(b => b.url));
+        // 后台保存，不阻塞跳转
+        this.bookmarkManager.saveBookmarks().catch(() => {});
       }
-      window.open(bookmark.url, '_self');
     });
 
-    el.addEventListener('contextmenu', (e) => {
+    wrapper.addEventListener('contextmenu', (e) => {
       const menu = document.getElementById('contextMenu');
       if (!menu) return;
       e.preventDefault();
@@ -156,9 +198,9 @@ export class BookmarkRenderer {
       menu.dataset.url = bookmark.url;
     });
 
-    this.setupDragEvents(el, bookmark, index);
+    this.setupDragEvents(wrapper, bookmark, index);
 
-    return el;
+    return wrapper;
   }
 
   setupDragEvents(el, bookmark, index) {
@@ -174,7 +216,7 @@ export class BookmarkRenderer {
 
     el.addEventListener('dragend', () => {
       el.classList.remove('dragging');
-      document.querySelectorAll('.bookmark-item').forEach(item => {
+      document.querySelectorAll('.bookmark-wrapper').forEach(item => {
         item.classList.remove('drag-over');
       });
     });
@@ -210,11 +252,14 @@ export class BookmarkRenderer {
     });
   }
 
-  calculateCardsPerRow(cardSize) {
-    const container = document.querySelector('.bookmarks-section');
-    if (!container) return 5;
+  calculateCardsPerRow(cardSize, containerWidth) {
+    if (!containerWidth) {
+      const container = document.querySelector('.bookmarks-section');
+      if (!container) return 5;
+      containerWidth = container.clientWidth;
+    }
 
-    const containerWidth = container.clientWidth - 60;
+    const availableWidth = containerWidth - 60;
 
     let cardMinWidth;
     switch (cardSize) {
@@ -224,8 +269,36 @@ export class BookmarkRenderer {
     }
 
     const gap = 22;
-    const cardsPerRow = Math.floor((containerWidth + gap) / (cardMinWidth + gap));
+    const cardsPerRow = Math.floor((availableWidth + gap) / (cardMinWidth + gap));
 
     return Math.max(1, cardsPerRow);
+  }
+
+  /**
+   * 启动数字时钟
+   * @private
+   */
+  _startDigitalClock() {
+    if (this._clockInterval) {
+      clearInterval(this._clockInterval);
+      this._clockInterval = null;
+    }
+
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    const update = () => {
+      const now = new Date();
+      const timeEl = document.getElementById('digitalTime');
+      const dateEl = document.getElementById('digitalDate');
+      if (timeEl) {
+        timeEl.textContent = String(now.getHours()).padStart(2, '0') + ':' +
+                             String(now.getMinutes()).padStart(2, '0');
+      }
+      if (dateEl) {
+        dateEl.textContent = (now.getMonth() + 1) + '/' + now.getDate() +
+                             ' 周' + weekdays[now.getDay()];
+      }
+    };
+    update();
+    this._clockInterval = setInterval(update, 10000);
   }
 }

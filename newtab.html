@@ -35,10 +35,6 @@
     <span class="slide-hint left">返回首页</span>
   </div>
 
-  <div class="slide-trigger-zone right" id="rightTriggerZone" style="display: flex;">
-    <span class="slide-hint right">便签</span>
-  </div>
-
   <div class="main-page" id="mainPage">
     <div class="container">
       <div class="bookmarks-section">
@@ -103,7 +99,13 @@
         <div class="form-group"><label>网址</label><input type="url" id="editUrl" required></div>
         <div class="form-group">
           <label>图标URL</label>
-          <input type="text" id="editIcon" placeholder="输入图标URL或使用搜索">
+          <div class="search-input-group">
+            <input type="text" id="editIcon" placeholder="输入图标URL，或从图库选择">
+            <button type="button" class="dialog-btn" id="openIconLibraryBtn" style="background:rgba(76,175,80,1);">🖼 图库</button>
+          </div>
+          <div class="icon-preview" id="editIconPreview" style="display:none;">
+            <img src="" alt="当前图标预览">
+          </div>
         </div>
         <div class="form-group">
           <label>搜索LOGO</label>
@@ -121,6 +123,28 @@
     </div>
   </div>
 
+  <div class="dialog" id="iconLibraryDialog">
+    <div class="dialog-content icon-library">
+      <div class="icon-library-header">
+        <h3>图标库</h3>
+        <button type="button" class="icon-library-close" id="closeIconLibraryBtn" title="关闭">✕</button>
+      </div>
+      <div class="icon-library-toolbar">
+        <input type="text" id="iconLibrarySearch" placeholder="搜索网站名称或域名，如 b站 / bilibili">
+        <div class="icon-library-tabs" id="iconLibraryTabs">
+          <button type="button" class="lib-tab active" data-tab="frequent">我的常用</button>
+          <button type="button" class="lib-tab" data-tab="preset">全部预设</button>
+          <button type="button" class="lib-tab" data-tab="mine">我的收藏</button>
+        </div>
+      </div>
+      <div class="icon-library-body" id="iconLibraryBody"></div>
+      <div class="dialog-buttons">
+        <button type="button" class="dialog-btn" id="saveIconToLibraryBtn" style="background:rgba(102,126,234,1);">➕ 保存当前图标到图库</button>
+        <button type="button" class="dialog-btn primary" id="closeIconLibraryBtn2">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="dialog" id="addBookmarkDialog">
     <div class="dialog-content">
       <h3>添加网站</h3>
@@ -132,7 +156,7 @@
       </div>
       <form id="manualAddForm" style="display:none;">
         <div class="form-group"><label>名称</label><input type="text" id="manualName" required></div>
-        <div class="form-group"><label>网址</label><input type="url" id="manualUrl" placeholder="https://" required></div>
+        <div class="form-group"><label>网址</label><input type="text" id="manualUrl" placeholder="example.com（无需 https://）" required></div>
         <div class="dialog-buttons">
           <button type="button" class="dialog-btn cancel" id="cancelManualAddBtn">取消</button>
           <button type="submit" class="dialog-btn primary">添加</button>
@@ -146,7 +170,7 @@
 
   <div class="dialog" id="settingsDialog">
     <div class="dialog-content">
-      <h3>设置</h3>
+      <h3>设置 <span id="settingsVersion" style="font-weight:400;font-size:0.75rem;opacity:0.65;margin-left:8px;"></span></h3>
       <div class="settings-section">
         <h4>个性化背景</h4>
         <div class="form-group">
@@ -199,6 +223,13 @@
         </div>
         <div id="backupList" style="max-height: 200px; overflow-y: auto; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; background: rgba(255,255,255,0.5);">
           <div style="padding: 15px; text-align: center; color: #666; font-size: 0.85rem;">正在加载备份...</div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>图标库</h4>
+        <div class="dialog-buttons" style="justify-content: flex-start;">
+          <button type="button" class="dialog-btn" id="applyPresetIconsBtn" style="background:rgba(156,39,176,1);" title="把图库里的设计 LOGO 套用到已添加的常用网站（只替换默认 favicon）">🎨 套用预设图标</button>
+          <button type="button" class="dialog-btn" id="openIconLibraryFromSettingsBtn" style="background:rgba(0,150,136,1);" title="浏览预设 LOGO 并收藏自定义图标">🖼 打开图标库</button>
         </div>
       </div>
       <div class="settings-section">
@@ -289,9 +320,12 @@
     <div class="context-menu-item" data-action="delete"><span>🗑️</span><span>删除书签</span></div>
   </div>
 
-  <button class="settings-button" id="settingsButton" title="设置">⚙️</button>
-  <button class="stats-entry-button" id="statsEntryButton" title="访问统计">📊</button>
-  <button class="notes-entry-button" id="notesEntryButton" title="便签">📝</button>
+  <div class="right-navigation" id="rightNavigation">
+    <button class="nav-button home-btn" id="homeButton" title="首页">🏠</button>
+    <button class="nav-button settings-btn" id="settingsButton" title="设置">⚙️</button>
+    <button class="nav-button notes-btn" id="notesEntryButton" title="便签">📝</button>
+    <button class="nav-button stats-btn" id="statsEntryButton" title="访问统计">📊</button>
+  </div>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -3,6 +3,9 @@ export class PageNavigator {
     this.isNotesPageOpen = false;
     this.isStatsPageOpen = false;
     this.onPageChange = null;
+    this.totalPages = 3;
+    this._dots = null;
+    this._listenersAttached = false;
   }
 
   getCurrentPageIndex() {
@@ -23,22 +26,20 @@ export class PageNavigator {
     this.onOpenStats = onOpenStats;
     this.onCloseStats = onCloseStats;
 
-    const dots = document.querySelectorAll('.page-dot');
+    if (this._listenersAttached) return;
+    this._listenersAttached = true;
+
+    this._dots = document.querySelectorAll('.page-dot');
     const slideLeftBtn = document.getElementById('slideLeftBtn');
 
-    dots.forEach((dot, index) => {
+    this._dots.forEach((dot, index) => {
       dot.addEventListener('click', () => {
         this.goToPage(index);
       });
     });
 
     if (slideLeftBtn) {
-      slideLeftBtn.addEventListener('click', () => this.closeNotesPage());
-    }
-
-    const rightTriggerZone = document.getElementById('rightTriggerZone');
-    if (rightTriggerZone) {
-      rightTriggerZone.addEventListener('click', () => this.openNotesPage());
+      slideLeftBtn.addEventListener('click', () => this.goBack());
     }
 
     const notesEntryButton = document.getElementById('notesEntryButton');
@@ -64,6 +65,11 @@ export class PageNavigator {
     if (backBtn) {
       backBtn.addEventListener('click', () => this.closeNotesPage());
     }
+
+    const homeBtn = document.getElementById('homeButton');
+    if (homeBtn) {
+      homeBtn.addEventListener('click', () => this.goToPage(0));
+    }
   }
 
   setupTouchGestures() {
@@ -82,14 +88,10 @@ export class PageNavigator {
       const diffY = touchStartY - touchEndY;
 
       if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-        if (diffX > 0 && !this.isNotesPageOpen && !this.isStatsPageOpen) {
-          this.openNotesPage();
-        } else if (diffX < 0 && (this.isNotesPageOpen || this.isStatsPageOpen)) {
-          if (this.isStatsPageOpen) {
-            this.closeStatsPage();
-          } else {
-            this.closeNotesPage();
-          }
+        if (diffX > 0 && this.getCurrentPageIndex() < 2) {
+          this.goForward();
+        } else if (diffX < 0 && this.getCurrentPageIndex() > 0) {
+          this.goBack();
         }
       }
     }, { passive: true });
@@ -99,8 +101,12 @@ export class PageNavigator {
     let isDragging = false;
     let startX = 0;
     const notesPage = document.getElementById('notesPage');
+    const statsPage = document.getElementById('statsPage');
 
     document.addEventListener('mousedown', (e) => {
+      // 模态框打开时不触发拖拽手势
+      if (e.target.closest('.note-modal-overlay')) return;
+
       if (e.clientX > window.innerWidth - 50 || this.isNotesPageOpen || this.isStatsPageOpen) {
         isDragging = true;
         startX = e.clientX;
@@ -111,11 +117,12 @@ export class PageNavigator {
     document.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
 
-      if (this.isNotesPageOpen && notesPage) {
-        const diff = e.clientX - startX;
-        if (diff > 0) {
-          notesPage.style.transform = `translateX(${diff}px)`;
-        }
+      const diff = e.clientX - startX;
+      const target = this.isNotesPageOpen ? notesPage :
+                     this.isStatsPageOpen ? statsPage : null;
+
+      if (target && diff > 0) {
+        target.style.transform = `translateX(${diff}px)`;
       }
     });
 
@@ -126,143 +133,40 @@ export class PageNavigator {
 
       const diff = startX - e.clientX;
 
-      if (!this.isNotesPageOpen && !this.isStatsPageOpen && diff > 100) {
-        this.openNotesPage();
-      } else if (this.isNotesPageOpen && diff < -100) {
-        this.closeNotesPage();
-      } else if (this.isStatsPageOpen && diff < -100) {
-        this.closeStatsPage();
-      } else if (this.isNotesPageOpen && notesPage) {
-        notesPage.style.transform = '';
+      if (this.getCurrentPageIndex() === 0 && diff > 100) {
+        this.goForward();
+      } else if (this.getCurrentPageIndex() > 0 && diff < -100) {
+        this.goBack();
+      } else {
+        const target = this.isNotesPageOpen ? notesPage :
+                       this.isStatsPageOpen ? statsPage : null;
+        if (target) target.style.transform = '';
       }
     });
   }
 
   setupKeyboardNav() {
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' && !this.isNotesPageOpen && !this.isStatsPageOpen) {
-        this.openNotesPage();
-      } else if (e.key === 'ArrowLeft') {
-        if (this.isStatsPageOpen) {
-          this.closeStatsPage();
-        } else if (this.isNotesPageOpen) {
-          this.closeNotesPage();
-        }
+      if (e.key === 'ArrowRight' && this.getCurrentPageIndex() < 2) {
+        this.goForward();
+      } else if (e.key === 'ArrowLeft' && this.getCurrentPageIndex() > 0) {
+        this.goBack();
       }
     });
   }
 
-  openNotesPage() {
-    const notesPage = document.getElementById('notesPage');
-    const dots = document.querySelectorAll('.page-dot');
-    const leftTrigger = document.getElementById('leftTriggerZone');
-    const rightTrigger = document.getElementById('rightTriggerZone');
-    const settingsButton = document.getElementById('settingsButton');
-    const notesEntryButton = document.getElementById('notesEntryButton');
-    const statsEntryButton = document.getElementById('statsEntryButton');
-
-    if (!notesPage) return;
-
-    this.isNotesPageOpen = true;
-    notesPage.classList.add('active');
-
-    dots.forEach((dot, index) => {
-      dot.classList.toggle('active', index === 1);
-    });
-
-    if (leftTrigger) leftTrigger.style.display = 'flex';
-    if (rightTrigger) rightTrigger.style.display = 'none';
-    if (settingsButton) settingsButton.style.display = 'none';
-    if (notesEntryButton) notesEntryButton.style.display = 'none';
-    if (statsEntryButton) statsEntryButton.style.display = 'none';
-
-    if (this.onOpenNotes) this.onOpenNotes();
-    this.notifyPageChange();
+  goForward() {
+    const currentPage = this.getCurrentPageIndex();
+    if (currentPage < 2) {
+      this.goToPage(currentPage + 1);
+    }
   }
 
-  closeNotesPage() {
-    const notesPage = document.getElementById('notesPage');
-    const dots = document.querySelectorAll('.page-dot');
-    const leftTrigger = document.getElementById('leftTriggerZone');
-    const rightTrigger = document.getElementById('rightTriggerZone');
-    const settingsButton = document.getElementById('settingsButton');
-    const notesEntryButton = document.getElementById('notesEntryButton');
-    const statsEntryButton = document.getElementById('statsEntryButton');
-
-    if (!notesPage) return;
-
-    this.isNotesPageOpen = false;
-    notesPage.classList.remove('active');
-    notesPage.style.transform = '';
-
-    dots.forEach((dot, index) => {
-      dot.classList.toggle('active', index === 0);
-    });
-
-    if (leftTrigger) leftTrigger.style.display = 'none';
-    if (rightTrigger) rightTrigger.style.display = 'flex';
-    if (settingsButton) settingsButton.style.display = '';
-    if (notesEntryButton) notesEntryButton.style.display = '';
-    if (statsEntryButton) statsEntryButton.style.display = '';
-
-    if (this.onCloseNotes) this.onCloseNotes();
-    this.notifyPageChange();
-  }
-
-  openStatsPage() {
-    const statsPage = document.getElementById('statsPage');
-    const dots = document.querySelectorAll('.page-dot');
-    const leftTrigger = document.getElementById('leftTriggerZone');
-    const rightTrigger = document.getElementById('rightTriggerZone');
-    const settingsButton = document.getElementById('settingsButton');
-    const notesEntryButton = document.getElementById('notesEntryButton');
-    const statsEntryButton = document.getElementById('statsEntryButton');
-
-    if (!statsPage) return;
-
-    this.isStatsPageOpen = true;
-    statsPage.classList.add('active');
-
-    dots.forEach((dot, index) => {
-      dot.classList.toggle('active', index === 2);
-    });
-
-    if (leftTrigger) leftTrigger.style.display = 'flex';
-    if (rightTrigger) rightTrigger.style.display = 'none';
-    if (settingsButton) settingsButton.style.display = 'none';
-    if (notesEntryButton) notesEntryButton.style.display = 'none';
-    if (statsEntryButton) statsEntryButton.style.display = 'none';
-
-    if (this.onOpenStats) this.onOpenStats();
-    this.notifyPageChange();
-  }
-
-  closeStatsPage() {
-    const statsPage = document.getElementById('statsPage');
-    const dots = document.querySelectorAll('.page-dot');
-    const leftTrigger = document.getElementById('leftTriggerZone');
-    const rightTrigger = document.getElementById('rightTriggerZone');
-    const settingsButton = document.getElementById('settingsButton');
-    const notesEntryButton = document.getElementById('notesEntryButton');
-    const statsEntryButton = document.getElementById('statsEntryButton');
-
-    if (!statsPage) return;
-
-    this.isStatsPageOpen = false;
-    statsPage.classList.remove('active');
-
-    dots.forEach((dot, index) => {
-      dot.classList.toggle('active', index === 0);
-    });
-
-    if (leftTrigger) leftTrigger.style.display = 'none';
-    if (rightTrigger) rightTrigger.style.display = 'flex';
-    if (settingsButton) settingsButton.style.display = '';
-    if (notesEntryButton) notesEntryButton.style.display = '';
-    if (statsEntryButton) statsEntryButton.style.display = '';
-
-    if (this.onCloseStats) this.onCloseStats();
-    this.notifyPageChange();
+  goBack() {
+    const currentPage = this.getCurrentPageIndex();
+    if (currentPage > 0) {
+      this.goToPage(currentPage - 1);
+    }
   }
 
   goToPage(pageIndex) {
@@ -276,5 +180,87 @@ export class PageNavigator {
       this.closeNotesPage();
       this.openStatsPage();
     }
+  }
+
+  _updateDots(activeIndex) {
+    if (!this._dots) {
+      this._dots = document.querySelectorAll('.page-dot');
+    }
+    this._dots.forEach((dot, index) => {
+      dot.classList.toggle('active', index === activeIndex);
+    });
+  }
+
+  openNotesPage() {
+    const notesPage = document.getElementById('notesPage');
+    const leftTrigger = document.getElementById('leftTriggerZone');
+
+    if (!notesPage) return;
+
+    this.isNotesPageOpen = true;
+    notesPage.classList.add('active');
+
+    this._updateDots(1);
+
+    if (leftTrigger) leftTrigger.style.display = 'flex';
+
+    if (this.onOpenNotes) this.onOpenNotes();
+    this.notifyPageChange();
+  }
+
+  closeNotesPage() {
+    const notesPage = document.getElementById('notesPage');
+    const leftTrigger = document.getElementById('leftTriggerZone');
+
+    if (!notesPage) return;
+
+    this.isNotesPageOpen = false;
+    notesPage.classList.remove('active');
+    notesPage.style.transform = '';
+
+    this._updateDots(this.getCurrentPageIndex());
+
+    if (this.getCurrentPageIndex() === 0) {
+      if (leftTrigger) leftTrigger.style.display = 'none';
+    }
+
+    if (this.onCloseNotes) this.onCloseNotes();
+    this.notifyPageChange();
+  }
+
+  openStatsPage() {
+    const statsPage = document.getElementById('statsPage');
+    const leftTrigger = document.getElementById('leftTriggerZone');
+
+    if (!statsPage) return;
+
+    this.isStatsPageOpen = true;
+    statsPage.classList.add('active');
+
+    this._updateDots(2);
+
+    if (leftTrigger) leftTrigger.style.display = 'flex';
+
+    if (this.onOpenStats) this.onOpenStats();
+    this.notifyPageChange();
+  }
+
+  closeStatsPage() {
+    const statsPage = document.getElementById('statsPage');
+    const leftTrigger = document.getElementById('leftTriggerZone');
+
+    if (!statsPage) return;
+
+    this.isStatsPageOpen = false;
+    statsPage.classList.remove('active');
+
+    this._updateDots(this.getCurrentPageIndex());
+
+    if (this.getCurrentPageIndex() === 0) {
+      if (leftTrigger) leftTrigger.style.display = 'none';
+    }
+
+    if (this.onCloseStats) this.onCloseStats();
+    this.notifyPageChange();
   }
 }

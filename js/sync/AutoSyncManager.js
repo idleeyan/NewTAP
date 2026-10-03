@@ -13,12 +13,14 @@ export class AutoSyncManager {
   async loadConfig() {
     try {
       const result = await chrome.storage.local.get('autoSyncConfig');
+      console.log('[AutoSync] loadConfig 读取到:', result.autoSyncConfig);
       if (result.autoSyncConfig) {
         this.config = { ...this.config, ...result.autoSyncConfig };
       }
+      console.log('[AutoSync] loadConfig 合并后 config:', this.config);
       return this.config;
     } catch (error) {
-      console.error('加载自动同步配置失败:', error);
+      console.error('[AutoSync] 加载自动同步配置失败:', error);
       return this.config;
     }
   }
@@ -28,16 +30,31 @@ export class AutoSyncManager {
       this.config = { ...this.config, ...config };
       await chrome.storage.local.set({ autoSyncConfig: this.config });
 
+      // 读回验证：确认存储确实写入成功（防止静默失败造成“已保存”假象）
+      const verify = await chrome.storage.local.get('autoSyncConfig');
+      const stored = verify.autoSyncConfig;
+      const matched = stored &&
+        stored.enabled === this.config.enabled &&
+        stored.interval === this.config.interval &&
+        stored.syncOnStart === this.config.syncOnStart;
+
+      if (!matched) {
+        console.error('[AutoSync] 保存验证失败：写入值与读回值不一致', { 写入: { ...this.config }, 读回: stored });
+        return { success: false, error: '保存验证失败：存储未正确写入' };
+      }
+
+      console.log('[AutoSync] 配置保存并验证通过:', this.config);
+
       if (this.config.enabled) {
         this.start();
       } else {
         this.stop();
       }
 
-      return true;
+      return { success: true };
     } catch (error) {
-      console.error('保存自动同步配置失败:', error);
-      return false;
+      console.error('[AutoSync] 保存自动同步配置失败:', error);
+      return { success: false, error: error.message };
     }
   }
 
@@ -48,7 +65,6 @@ export class AutoSyncManager {
       this.start();
 
       if (this.config.syncOnStart) {
-        console.log('启动时自动同步');
         await this.doSync();
       }
     }
@@ -64,11 +80,8 @@ export class AutoSyncManager {
     const intervalMs = this.config.interval * 60 * 1000;
 
     this.intervalId = setInterval(async () => {
-      console.log('自动同步触发');
       await this.doSync();
     }, intervalMs);
-
-    console.log(`自动同步已启动，间隔: ${this.config.interval} 分钟`);
   }
 
   stop() {
@@ -76,7 +89,6 @@ export class AutoSyncManager {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
-    console.log('自动同步已停止');
   }
 
   async doSync() {
@@ -87,7 +99,6 @@ export class AutoSyncManager {
 
     try {
       const result = await this.syncManager.smartSync();
-      console.log('自动同步结果:', result);
 
       if (result.success) {
         await chrome.storage.local.set({

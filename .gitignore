@@ -1,0 +1,31 @@
+# ===== Verysync 冲突副本 =====
+# Verysync 同步会在目录里留下 *-sync-conflict-YYYYMMDD-HHMMSS-XXXX 副本，
+# 它们是旧版本残留，绝不能提交进仓库。
+*-sync-conflict-*
+*.sync-conflict-*
+
+# ===== 本地 AI 工作记忆 =====
+.workbuddy/
+.worktree/
+
+# ===== 打包产物 =====
+# 发布包走 GitHub Release，不入库
+*.zip
+
+# ===== 开发脚本（不参与扩展运行）=====
+*.py
+__pycache__/
+*.pyc
+
+# ===== 开发用预览页 =====
+logo-preview.html
+
+# ===== 系统与编辑器 =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.trae/
+*.swp
+*.tmp
+*.log

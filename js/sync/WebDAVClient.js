@@ -8,7 +8,6 @@ export class WebDAVClient {
   }
 
   async sendRequest(method, path = '', data = null) {
-    console.log('WebDAV: 发送请求', method, path);
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({
         action: 'webdav',
@@ -21,7 +20,6 @@ export class WebDAVClient {
         path: path,
         data: data
       }, (result) => {
-        console.log('WebDAV: 收到响应', method, path, result);
         resolve(result);
       });
     });
@@ -33,15 +31,12 @@ export class WebDAVClient {
         this.sendRequest('PROPFIND'),
         new Promise((_, reject) => setTimeout(() => reject(new Error('PROPFIND超时')), 10000))
       ]);
-      console.log('WebDAV: PROPFIND 测试结果', result);
 
       if (!result.success) {
-        console.log('WebDAV: PROPFIND 失败，尝试 GET');
         result = await Promise.race([
           this.sendRequest('GET', '/'),
           new Promise((_, reject) => setTimeout(() => reject(new Error('GET超时')), 10000))
         ]);
-        console.log('WebDAV: GET 测试结果', result);
       }
 
       return result.success;
@@ -80,7 +75,7 @@ export class WebDAVClient {
           }
         }
       } catch (error) {
-        console.log('WebDAV: 目录检查超时', path, error.message);
+        // Ignore timeout, try next path
       }
     }
 
@@ -88,9 +83,7 @@ export class WebDAVClient {
   }
 
   async uploadData(data) {
-    console.log('WebDAV: 开始上传数据');
-    const dirResult = await this.ensureDirectory();
-    console.log('WebDAV: 目录确保结果', dirResult);
+    await this.ensureDirectory();
 
     const syncData = {
       version: '1.0',
@@ -107,37 +100,31 @@ export class WebDAVClient {
     ];
 
     for (const filePath of pathsToTry) {
-      console.log('WebDAV: 尝试上传文件到', filePath);
-
       try {
         let result = await Promise.race([
           this.sendRequest('PUT', filePath, syncData),
           new Promise((_, reject) => setTimeout(() => reject(new Error('PUT请求超时')), 10000))
         ]);
-        console.log('WebDAV: PUT结果', result);
 
         if (result.success) {
           return true;
         }
 
         if (result.status === 403 || result.status === 405) {
-          console.log('WebDAV: PUT失败，尝试POST');
           result = await Promise.race([
             this.sendRequest('POST', filePath, syncData),
             new Promise((_, reject) => setTimeout(() => reject(new Error('POST请求超时')), 10000))
           ]);
-          console.log('WebDAV: POST结果', result);
 
           if (result.success) {
             return true;
           }
         }
       } catch (error) {
-        console.log('WebDAV: 上传请求失败或超时', filePath, error.message);
+        // Ignore timeout, try next path
       }
     }
 
-    console.log('WebDAV: 所有路径都上传失败');
     return false;
   }
 
@@ -150,13 +137,11 @@ export class WebDAVClient {
     ];
 
     for (const filePath of pathsToTry) {
-      console.log('WebDAV: 尝试下载文件从', filePath);
       try {
         const result = await Promise.race([
           this.sendRequest('GET', filePath),
           new Promise((_, reject) => setTimeout(() => reject(new Error('GET请求超时')), 10000))
         ]);
-        console.log('WebDAV: 下载结果', result);
 
         if (result.success) {
           try {
@@ -172,7 +157,7 @@ export class WebDAVClient {
           }
         }
       } catch (error) {
-        console.log('WebDAV: 下载请求失败或超时', filePath, error.message);
+        // Ignore timeout, try next path
       }
     }
 
@@ -204,7 +189,7 @@ export class WebDAVClient {
           };
         }
       } catch (error) {
-        console.log('WebDAV: HEAD请求失败或超时', filePath, error.message);
+        // Ignore timeout, try next path
       }
     }
 

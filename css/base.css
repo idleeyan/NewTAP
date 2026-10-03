@@ -1,29 +1,126 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --primary-color: #667eea;
-  --primary-dark: #764ba2;
-  --bg-dark: #1a1a2e;
-  --bg-card: rgba(30, 30, 40, 0.6);
-  --text-light: white;
-  --text-dark: #333;
-  --border-light: rgba(255, 255, 255, 0.1);
-  --border-dark: rgba(255, 255, 255, 0.2);
-  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.2);
-  --blur-bg: blur(20px);
+  /* 🎨 优化的设计 Token 系统 */
+  
+  /* 主色调 - 更丰富的紫色渐变 */
+  --primary-50: #f0f0ff;
+  --primary-100: #e0e0ff;
+  --primary-200: #c7c4ff;
+  --primary-300: #a39aff;
+  --primary-400: #7b6aff;
+  --primary-500: #667eea;
+  --primary-600: #5564d6;
+  --primary-700: #4a4fc2;
+  --primary-800: #3f3da8;
+  --primary-900: #2d286a;
+  
+  /* 辅助色 - 暖橙色调 */
+  --secondary-400: #ffb74d;
+  --secondary-500: #ffa726;
+  --secondary-600: #fb8c00;
+  
+  /* 功能色 */
+  --success: #4caf50;
+  --warning: #ff9800;
+  --error: #f44336;
+  --info: #2196f3;
+  
+  /* 深色主题基础色 - 更丰富的层次 */
+  --bg-base: #0f0f1a;
+  --bg-surface: #1a1a2e;
+  --bg-elevated: #252540;
+  --bg-card: rgba(26, 26, 46, 0.7);
+  
+  /* 文字颜色 */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
+  --text-disabled: rgba(255, 255, 255, 0.3);
+  
+  /* 边框 & 分割线 */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  
+  /* 阴影系统 - 更细腻的层次 */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);
+  --shadow-glow-purple: 0 0 20px rgba(102, 126, 234, 0.3);
+  --shadow-glow-orange: 0 0 20px rgba(255, 167, 38, 0.3);
+  
+  /* 模糊效果 */
+  --blur-sm: blur(8px);
+  --blur-md: blur(16px);
+  --blur-lg: blur(24px);
+  --blur-xl: blur(32px);
+  
+  /* 圆角系统 */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 50%;
+  
+  /* 间距系统 - 4px基准 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  
+  /* 字体系统 */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* 字体大小 */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  
+  /* 过渡动画 */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-html, body { height: 100%; }
+html, body { 
+  height: 100%; 
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg-dark);
-  color: var(--text-light);
+  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 25px;
+  padding: var(--space-6);
   min-height: 100vh;
+  overflow-x: hidden;
+  
+  /* 微妙的背景纹理 */
+  background-image: 
+    radial-gradient(ellipse at 20% 50%, rgba(102, 126, 234, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(118, 75, 162, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(255, 167, 38, 0.04) 0%, transparent 50%);
 }
 
 .container {
@@ -31,8 +128,8 @@ body {
   max-width: 1600px;
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  padding: 0 30px;
+  gap: var(--space-6);
+  padding: 0 var(--space-8);
   position: relative;
   z-index: 1;
 }
@@ -47,7 +144,7 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  transition: background-image 0.5s ease-in-out;
+  transition: background-image var(--transition-slow);
 }
 
 #bgOverlay {
@@ -57,55 +154,77 @@ body {
   width: 100%;
   height: 100%;
   z-index: -1;
-  background: rgba(0, 0, 0, 0.4);
-  transition: background 0.3s ease;
+  background: rgba(15, 15, 26, 0.55);
+  transition: background var(--transition-base);
 }
 
 .bookmarks-section,
 .modules-section {
   background: var(--bg-card);
-  backdrop-filter: var(--blur-bg);
-  -webkit-backdrop-filter: var(--blur-bg);
-  border-radius: 20px;
-  padding: 25px 30px;
+  border-radius: var(--radius-xl);
+  padding: var(--space-6) var(--space-8);
   width: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .modules-section h2 {
-  margin-bottom: 15px;
-  font-size: 1.2rem;
-  color: var(--text-dark);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .bookmarks-section-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-  font-size: 1.1rem;
-  font-weight: 500;
+  margin-bottom: var(--space-5);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
 .bookmarks-count {
-  font-size: 0.85rem;
-  opacity: 0.7;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  font-weight: 400;
+  padding: var(--space-1) var(--space-3);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
 }
 
 .more-bookmarks-section {
-  margin-top: 20px;
+  margin-top: var(--space-6);
 }
 
 #moreBookmarksGrid {
-  padding-top: 5px;
-  padding-bottom: 20px;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-8);
 }
 
+/* 自定义滚动条 - 更细腻 */
 ::-webkit-scrollbar {
-  display: none;
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .main-page,

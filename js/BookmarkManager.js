@@ -1,3 +1,5 @@
+import { iconCache } from './IconCache.js';
+import { iconLibrary } from './IconLibrary.js';
 
 export class BookmarkManager {
   constructor() {
@@ -7,7 +9,7 @@ export class BookmarkManager {
       {
         name: 'Google',
         url: 'https://www.google.com',
-        icon: 'https://www.google.com/s2/favicons?domain=google.com&sz=64',
+        icon: 'images/logos/google.svg',
         index: 0,
         visitCount: 0,
         lastVisit: 0
@@ -15,7 +17,7 @@ export class BookmarkManager {
       {
         name: '百度',
         url: 'https://www.baidu.com',
-        icon: 'https://www.google.com/s2/favicons?domain=baidu.com&sz=64',
+        icon: 'images/logos/baidu.svg',
         index: 1,
         visitCount: 0,
         lastVisit: 0
@@ -23,7 +25,7 @@ export class BookmarkManager {
       {
         name: 'GitHub',
         url: 'https://github.com',
-        icon: 'https://www.google.com/s2/favicons?domain=github.com&sz=64',
+        icon: 'images/logos/github.svg',
         index: 2,
         visitCount: 0,
         lastVisit: 0
@@ -31,7 +33,7 @@ export class BookmarkManager {
       {
         name: 'YouTube',
         url: 'https://www.youtube.com',
-        icon: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=64',
+        icon: 'images/logos/youtube.svg',
         index: 3,
         visitCount: 0,
         lastVisit: 0
@@ -39,7 +41,7 @@ export class BookmarkManager {
       {
         name: '知乎',
         url: 'https://www.zhihu.com',
-        icon: 'https://www.google.com/s2/favicons?domain=zhihu.com&sz=64',
+        icon: 'images/logos/zhihu.svg',
         index: 4,
         visitCount: 0,
         lastVisit: 0
@@ -47,7 +49,7 @@ export class BookmarkManager {
       {
         name: '微博',
         url: 'https://weibo.com',
-        icon: 'https://www.google.com/s2/favicons?domain=weibo.com&sz=64',
+        icon: 'images/logos/weibo.svg',
         index: 5,
         visitCount: 0,
         lastVisit: 0
@@ -55,7 +57,7 @@ export class BookmarkManager {
       {
         name: '腾讯视频',
         url: 'https://v.qq.com',
-        icon: 'https://www.google.com/s2/favicons?domain=v.qq.com&sz=64',
+        icon: 'images/logos/vqq.svg',
         index: 6,
         visitCount: 0,
         lastVisit: 0
@@ -63,7 +65,7 @@ export class BookmarkManager {
       {
         name: '网易云音乐',
         url: 'https://music.163.com',
-        icon: 'https://www.google.com/s2/favicons?domain=music.163.com&sz=64',
+        icon: 'images/logos/netease-music.svg',
         index: 7,
         visitCount: 0,
         lastVisit: 0
@@ -111,14 +113,11 @@ export class BookmarkManager {
 
   async saveBookmarks() {
     try {
-      console.log('保存书签，数量:', this.customBookmarks.length);
-      console.log('书签访问数据:', this.customBookmarks.map(b => ({ name: b.name, visitCount: b.visitCount })));
       await chrome.storage.local.set({
         customBookmarks: this.customBookmarks,
         lastLocalModify: Date.now()
       });
       this.bookmarks = [...this.customBookmarks];
-      console.log('书签保存成功');
       return true;
     } catch (error) {
       console.error('保存书签失败:', error);
@@ -129,14 +128,36 @@ export class BookmarkManager {
   async addBookmark(bookmark) {
     // Validate
     if (!bookmark.name || !bookmark.url) {
-      throw new Error('Name and URL are required');
+      throw new Error('名称和网址不能为空');
+    }
+
+    // Normalize URL - add https:// if no protocol prefix
+    let normalizedUrl = bookmark.url.trim();
+    if (!/^https?:\/\//i.test(normalizedUrl)) {
+      normalizedUrl = 'https://' + normalizedUrl;
+    }
+
+    // Parse hostname safely
+    let hostname;
+    try {
+      hostname = new URL(normalizedUrl).hostname;
+    } catch (e) {
+      throw new Error('网址格式无效，请检查后重试');
+    }
+
+    // 图标：优先用图库里为常用网站设计的预设 LOGO（离线、统一、好看），
+    // 用户自带图标（data URI 或指定图片）一律保留，不被覆盖
+    let icon = bookmark.icon || `https://${hostname}/favicon.ico`;
+    if (this.isDefaultFavicon(icon)) {
+      const preset = iconLibrary.matchByUrl(normalizedUrl);
+      if (preset) icon = preset.file;
     }
 
     const newBookmark = {
       id: Date.now().toString(),
       name: bookmark.name,
-      url: bookmark.url,
-      icon: bookmark.icon || `https://www.google.com/s2/favicons?domain=${new URL(bookmark.url).hostname}&sz=64`,
+      url: normalizedUrl,
+      icon,
       index: this.bookmarks.length,
       visitCount: 0,
       lastVisit: Date.now(),
@@ -144,18 +165,59 @@ export class BookmarkManager {
     };
 
     this.customBookmarks.push(newBookmark);
-    await this.saveBookmarks();
+    const saved = await this.saveBookmarks();
+    if (!saved) {
+      // Rollback on failure
+      this.customBookmarks.pop();
+      throw new Error('保存失败，请重试');
+    }
     return newBookmark;
   }
 
   async updateBookmark(url, updates) {
     const index = this.customBookmarks.findIndex(b => b.url === url);
     if (index !== -1) {
-      this.customBookmarks[index] = { ...this.customBookmarks[index], ...updates };
+      // 用户显式更换图标：清掉旧图标与新图标的本地缓存，避免沿用错误/旧数据
+      if (updates.icon && updates.icon !== this.customBookmarks[index].icon) {
+        iconCache.invalidate(this.customBookmarks[index].icon);
+        iconCache.invalidate(updates.icon);
+      }
+      // 更换图标（或任意更新）时刷新 lastModify，确保合并同步时本机版本胜出，
+      // 避免云端旧版本把用户新选的 data URI logo 覆盖掉
+      this.customBookmarks[index] = { ...this.customBookmarks[index], ...updates, lastModify: Date.now() };
       await this.saveBookmarks();
       return true;
     }
     return false;
+  }
+
+  /**
+   * 判断是不是「系统默认图标」：站点 favicon.ico 或 Google favicon 服务。
+   * 这类图标在国内常常拉不到，可以安全替换成图库预设 LOGO。
+   */
+  isDefaultFavicon(icon) {
+    if (!icon) return true;
+    return /\/favicon\.ico(\?|$)/i.test(icon) ||
+           /s2\/favicons|gstatic\.com\/faviconV2/i.test(icon);
+  }
+
+  /**
+   * 批量为已有书签套用图库预设 LOGO（只替换默认 favicon，不动用户自定义图标）
+   * @returns {Promise<number>} 被替换的书签数量
+   */
+  async applyPresetIcons() {
+    let count = 0;
+    for (const b of this.customBookmarks) {
+      if (b.icon && b.icon.startsWith('data:')) continue;
+      const preset = iconLibrary.matchByUrl(b.url);
+      if (!preset || b.icon === preset.file) continue;
+      iconCache.invalidate(b.icon);
+      b.icon = preset.file;
+      b.lastModify = Date.now();
+      count++;
+    }
+    if (count > 0) await this.saveBookmarks();
+    return count;
   }
 
   async deleteBookmark(url) {

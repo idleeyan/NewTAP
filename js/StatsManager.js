@@ -35,7 +35,7 @@ export class StatsManager {
       bookmark.visitHistory = [];
     }
     bookmark.visitHistory.unshift(visitRecord);
-    if (bookmark.visitHistory.length > 100) {
+    if (bookmark.visitHistory.length > 30) {
       bookmark.visitHistory.pop();
     }
 
@@ -47,6 +47,12 @@ export class StatsManager {
       bookmark.dailyStats[dateKey] = { count: 0, totalDuration: 0 };
     }
     bookmark.dailyStats[dateKey].count++;
+
+    // Prune dailyStats older than 30 days to prevent unbounded growth
+    const cutoffDate = new Date(now - 30 * 86400000).toISOString().split('T')[0];
+    for (const key of Object.keys(bookmark.dailyStats)) {
+      if (key < cutoffDate) delete bookmark.dailyStats[key];
+    }
 
     if (!bookmark.timeOfDayStats) {
       bookmark.timeOfDayStats = { morning: { count: 0, avgDuration: 0 }, afternoon: { count: 0, avgDuration: 0 }, evening: { count: 0, avgDuration: 0 } };

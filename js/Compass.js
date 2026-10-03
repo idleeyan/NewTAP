@@ -1,31 +1,43 @@
 
 export class CompassClock {
   constructor() {
+    this._intervalId = null;
+    this._cachedElements = null;
+    this._lastH = -1;
+    this._lastM = -1;
+    this._lastS = -1;
+    this._dotElements = new Map();
+    this._numElements = new Map();
     this.init();
   }
 
   init() {
-    // Initialize compass in add button
-    // We need to wait for the DOM or at least the button to exist
-    // But since the button is dynamically created by UIManager, we might need a method to init specific element
     this.startClockLoop();
   }
 
+  _getElements() {
+    if (this._cachedElements) return this._cachedElements;
+
+    this._cachedElements = {
+      hoursRing: document.getElementById('compassHoursBtn'),
+      minutesRing: document.getElementById('compassMinutesBtn'),
+      secondsRing: document.getElementById('compassSecondsBtn'),
+      dateEl: document.getElementById('compassDateBtn'),
+      weekdayEl: document.getElementById('compassWeekdayBtn')
+    };
+    return this._cachedElements;
+  }
+
   initCompassInButton(containerId) {
-    const hoursRing = document.getElementById('compassHoursBtn');
-    const minutesRing = document.getElementById('compassMinutesBtn');
-    const secondsRing = document.getElementById('compassSecondsBtn');
-    const dateEl = document.getElementById('compassDateBtn');
-    const weekdayEl = document.getElementById('compassWeekdayBtn');
+    const { hoursRing, minutesRing, secondsRing } = this._getElements();
 
     if (!hoursRing || !minutesRing || !secondsRing) {
       return false;
     }
 
-    // Initialize - using percentage radius
-    this.createGlowRing(hoursRing, 24, 42, 'hours');   // 42% radius
-    this.createGlowRing(minutesRing, 60, 38, 'minutes'); // 38% radius
-    this.createGlowRing(secondsRing, 60, 30, 'seconds'); // 30% radius
+    this.createGlowRing(hoursRing, 24, 42, 'hours');
+    this.createGlowRing(minutesRing, 60, 38, 'minutes');
+    this.createGlowRing(secondsRing, 60, 30, 'seconds');
 
     this.updateClockUI();
     return true;
@@ -36,20 +48,21 @@ export class CompassClock {
     container.dataset.type = type;
     container.dataset.count = count;
 
-    // Create glow track
     const glowTrack = document.createElement('div');
     glowTrack.className = 'compass-glow-track';
     container.appendChild(glowTrack);
 
-    // Create dots and numbers
+    const dotEls = [];
+    const numEls = [];
+
+    const fragment = document.createDocumentFragment();
+
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * 360 - 90;
       const rad = (angle * Math.PI) / 180;
-      // Use percentage for position
       const x = 50 + radiusPercent * Math.cos(rad);
       const y = 50 + radiusPercent * Math.sin(rad);
 
-      // Dot
       const dot = document.createElement('div');
       dot.className = 'compass-glow-dot';
       dot.dataset.value = i;
@@ -59,9 +72,9 @@ export class CompassClock {
         top: ${y}%;
         transform: translate(-50%, -50%);
       `;
-      container.appendChild(dot);
+      dotEls.push(dot);
+      fragment.appendChild(dot);
 
-      // Number
       const num = document.createElement('div');
       num.className = 'compass-number glow-number';
       num.dataset.value = i;
@@ -74,92 +87,108 @@ export class CompassClock {
         opacity: 0;
         transition: opacity 0.3s ease;
       `;
-      container.appendChild(num);
+      numEls.push(num);
+      fragment.appendChild(num);
     }
+
+    container.appendChild(fragment);
+    this._dotElements.set(type, dotEls);
+    this._numElements.set(type, numEls);
   }
 
   startClockLoop() {
+    this.stopClockLoop();
     this.updateClockUI();
-    setInterval(() => this.updateClockUI(), 1000);
+    this._intervalId = setInterval(() => this.updateClockUI(), 1000);
+  }
+
+  stopClockLoop() {
+    if (this._intervalId) {
+      clearInterval(this._intervalId);
+      this._intervalId = null;
+    }
   }
 
   updateClockUI() {
-    const hoursRing = document.getElementById('compassHoursBtn');
-    const minutesRing = document.getElementById('compassMinutesBtn');
-    const secondsRing = document.getElementById('compassSecondsBtn');
-    const dateEl = document.getElementById('compassDateBtn');
-    const weekdayEl = document.getElementById('compassWeekdayBtn');
-
-    if (!hoursRing) return;
+    const els = this._getElements();
+    if (!els.hoursRing) return;
 
     const now = new Date();
     const h = now.getHours();
     const m = now.getMinutes();
     const s = now.getSeconds();
 
-    // Update date
-    if (dateEl) dateEl.textContent = `${now.getMonth() + 1}/${now.getDate()}`;
-    if (weekdayEl) {
+    if (els.dateEl) els.dateEl.textContent = `${now.getMonth() + 1}/${now.getDate()}`;
+    if (els.weekdayEl) {
       const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-      weekdayEl.textContent = weekdays[now.getDay()];
+      els.weekdayEl.textContent = weekdays[now.getDay()];
     }
 
-    // Rotate rings
-    const hoursRotation = -h * 15;
-    const minutesRotation = -m * 6;
-    const secondsRotation = -s * 6;
+    requestAnimationFrame(() => {
+      if (h !== this._lastH) {
+        const hoursRotation = -h * 15;
+        els.hoursRing.style.transform = `translate(-50%, -50%) rotate(${hoursRotation}deg)`;
+        this.updateGlowRing('hours', h, hoursRotation, 24);
+        this._lastH = h;
+      }
 
-    hoursRing.style.transform = `translate(-50%, -50%) rotate(${hoursRotation}deg)`;
-    minutesRing.style.transform = `translate(-50%, -50%) rotate(${minutesRotation}deg)`;
-    secondsRing.style.transform = `translate(-50%, -50%) rotate(${secondsRotation}deg)`;
+      if (m !== this._lastM) {
+        const minutesRotation = -m * 6;
+        els.minutesRing.style.transform = `translate(-50%, -50%) rotate(${minutesRotation}deg)`;
+        this.updateGlowRing('minutes', m, minutesRotation, 60);
+        this._lastM = m;
+      }
 
-    this.updateGlowRing(hoursRing, h, hoursRotation, 24);
-    this.updateGlowRing(minutesRing, m, minutesRotation, 60);
-    this.updateGlowRing(secondsRing, s, secondsRotation, 60);
+      if (s !== this._lastS) {
+        const secondsRotation = -s * 6;
+        els.secondsRing.style.transform = `translate(-50%, -50%) rotate(${secondsRotation}deg)`;
+        this.updateGlowRing('seconds', s, secondsRotation, 60);
+        this._lastS = s;
+      }
+    });
   }
 
-  updateGlowRing(container, current, rotation, total) {
-    const dots = container.querySelectorAll('.compass-glow-dot');
-    const numbers = container.querySelectorAll('.glow-number');
+  updateGlowRing(type, current, rotation, total) {
+    const dots = this._dotElements.get(type);
+    const numbers = this._numElements.get(type);
+    if (!dots || !numbers) return;
+
     const halfTotal = total / 2;
 
-    dots.forEach((dot) => {
-      dot.classList.remove('active', 'nearby');
-      const val = parseInt(dot.dataset.value);
+    for (let i = 0; i < total; i++) {
+      const dot = dots[i];
+      const val = i;
+      let diff = val - current;
+      if (diff < -halfTotal) diff += total;
+      if (diff > halfTotal) diff -= total;
+      const absDiff = Math.abs(diff);
 
+      let dotClass = 'compass-glow-dot';
       if (val === current) {
-        dot.classList.add('active');
-      } else {
-        let diff = val - current;
-        if (diff < -halfTotal) diff += total;
-        if (diff > halfTotal) diff -= total;
-        if (Math.abs(diff) <= 3 && Math.abs(diff) > 0) {
-          dot.classList.add('nearby');
-        }
+        dotClass += ' active';
+      } else if (absDiff <= 3 && absDiff > 0) {
+        dotClass += ' nearby';
       }
-    });
+      if (dot.className !== dotClass) {
+        dot.className = dotClass;
+      }
 
-    numbers.forEach((num) => {
-      const val = parseInt(num.dataset.value);
-      num.classList.remove('active', 'nearby');
-
+      const num = numbers[i];
+      let numClass = 'compass-number glow-number';
       if (val === current) {
-        num.classList.add('active');
+        numClass += ' active';
         num.style.opacity = '1';
+      } else if (absDiff <= 2 && absDiff > 0) {
+        numClass += ' nearby';
+        num.style.opacity = '0.6';
       } else {
-        let diff = val - current;
-        if (diff < -halfTotal) diff += total;
-        if (diff > halfTotal) diff -= total;
-        if (Math.abs(diff) <= 2 && Math.abs(diff) > 0) {
-          num.classList.add('nearby');
-          num.style.opacity = '0.6';
-        } else {
-          num.style.opacity = '0';
-        }
+        num.style.opacity = '0';
+      }
+      if (num.className !== numClass) {
+        num.className = numClass;
       }
 
-      // Keep numbers upright
       num.style.transform = `translate(-50%, -50%) rotate(${-rotation}deg)`;
-    });
+    }
   }
 }

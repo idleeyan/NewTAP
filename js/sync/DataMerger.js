@@ -28,18 +28,28 @@ export class DataMerger {
 
       const existing = urlMap.get(bookmark.url);
       if (existing) {
-        const existingTime = existing.lastModify || existing.lastVisit || 0;
-        const bookmarkTime = bookmark.lastModify || bookmark.lastVisit || 0;
+        // 图标/名称冲突以 lastModify 为准；lastVisit 仅作无 lastModify 时的兜底。
+        // 否则另一端“最近点开过网站”会用旧图标盖掉刚改好的 logo。
+        const existingModify = existing.lastModify || 0;
+        const bookmarkModify = bookmark.lastModify || 0;
 
-        if (bookmarkTime > existingTime) {
-          const mergedBookmark = { ...bookmark };
-          mergedBookmark.visitCount = Math.max(existing.visitCount || 0, bookmark.visitCount || 0);
-          urlMap.set(bookmark.url, mergedBookmark);
+        // 图标选择优先：data URI（用户选的 logo / 已本地化）始终胜过在线 URL
+        const existingIsData = (existing.icon || '').startsWith('data:');
+        const incomingIsData = (bookmark.icon || '').startsWith('data:');
+        let winner;
+        if (existingIsData && !incomingIsData) winner = existing;
+        else if (!existingIsData && incomingIsData) winner = bookmark;
+        else if (bookmarkModify !== existingModify) {
+          winner = (bookmarkModify > existingModify) ? bookmark : existing;
         } else {
-          const mergedBookmark = { ...existing };
-          mergedBookmark.visitCount = Math.max(existing.visitCount || 0, bookmark.visitCount || 0);
-          urlMap.set(bookmark.url, mergedBookmark);
+          const existingTime = existing.lastVisit || 0;
+          const bookmarkTime = bookmark.lastVisit || 0;
+          winner = (bookmarkTime > existingTime) ? bookmark : existing;
         }
+
+        const mergedBookmark = { ...winner };
+        mergedBookmark.visitCount = Math.max(existing.visitCount || 0, bookmark.visitCount || 0);
+        urlMap.set(bookmark.url, mergedBookmark);
       } else {
         urlMap.set(bookmark.url, { ...bookmark });
       }

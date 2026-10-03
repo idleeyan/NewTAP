@@ -15,10 +15,29 @@ export class SettingsManager {
   }
 
   async init() {
-    await this.loadCardSize();
-    await this.loadCardShape();
-    await this.loadSortBy();
-    await this.loadBgSettings();
+    // 批量一次性读取所有设置，避免冷启动时多次跨进程 storage 往返
+    try {
+      const result = await chrome.storage.local.get([
+        'bookmarkCardSize',
+        'bookmarkCardShape',
+        'bookmarkSortBy',
+        'bgSettings'
+      ]);
+      if (result.bookmarkCardSize && ['small', 'medium', 'large'].includes(result.bookmarkCardSize)) {
+        this.cardSize = result.bookmarkCardSize;
+      }
+      if (result.bookmarkCardShape && ['square', 'round'].includes(result.bookmarkCardShape)) {
+        this.cardShape = result.bookmarkCardShape;
+      }
+      if (result.bookmarkSortBy && ['default', 'visits', 'recent', 'name'].includes(result.bookmarkSortBy)) {
+        this.sortBy = result.bookmarkSortBy;
+      }
+      if (result.bgSettings) {
+        this.bgSettings = { ...this.bgSettings, ...result.bgSettings };
+      }
+    } catch (error) {
+      console.error('加载设置失败:', error);
+    }
     this.applyBackground();
   }
 
@@ -167,108 +186,66 @@ export class SettingsManager {
   setupCardSizeControls() {
     const sizeButtons = document.querySelectorAll('.size-button');
     sizeButtons.forEach(button => {
-      // Update UI state based on current setting
-      if (button.dataset.size === this.cardSize) {
-        button.style.background = '#667eea';
-        button.style.color = 'white';
-      } else {
-        button.style.background = 'rgba(255,255,255,1)';
-        button.style.color = '#333';
+      button.classList.toggle('active', button.dataset.size === this.cardSize);
+
+      if (!button._sizeListenerAttached) {
+        button._sizeListenerAttached = true;
+        button.addEventListener('click', () => {
+          const size = button.dataset.size;
+          this.saveCardSize(size);
+          this.updateCardSizeUI(size);
+        });
       }
-
-      // Remove old listeners to prevent duplicates if called multiple times
-      // (This is a simplified approach, in a real app we might handle this better)
-      const newBtn = button.cloneNode(true);
-      button.parentNode.replaceChild(newBtn, button);
-
-      newBtn.addEventListener('click', () => {
-        const size = newBtn.dataset.size;
-        this.saveCardSize(size);
-        this.updateCardSizeUI(size);
-      });
     });
   }
 
   updateCardSizeUI(activeSize) {
-    const sizeButtons = document.querySelectorAll('.size-button');
-    sizeButtons.forEach(button => {
-      if (button.dataset.size === activeSize) {
-        button.style.background = '#667eea';
-        button.style.color = 'white';
-      } else {
-        button.style.background = 'rgba(255,255,255,1)';
-        button.style.color = '#333';
-      }
+    document.querySelectorAll('.size-button').forEach(button => {
+      button.classList.toggle('active', button.dataset.size === activeSize);
     });
   }
 
   setupCardShapeControls() {
     const shapeButtons = document.querySelectorAll('.shape-button');
     shapeButtons.forEach(button => {
-      if (button.dataset.shape === this.cardShape) {
-        button.style.background = '#667eea';
-        button.style.color = 'white';
-      } else {
-        button.style.background = 'rgba(255,255,255,1)';
-        button.style.color = '#333';
+      button.classList.toggle('active', button.dataset.shape === this.cardShape);
+
+      if (!button._shapeListenerAttached) {
+        button._shapeListenerAttached = true;
+        button.addEventListener('click', () => {
+          const shape = button.dataset.shape;
+          this.saveCardShape(shape);
+          this.updateCardShapeUI(shape);
+        });
       }
-
-      const newBtn = button.cloneNode(true);
-      button.parentNode.replaceChild(newBtn, button);
-
-      newBtn.addEventListener('click', () => {
-        const shape = newBtn.dataset.shape;
-        this.saveCardShape(shape);
-        this.updateCardShapeUI(shape);
-      });
     });
   }
 
   updateCardShapeUI(activeShape) {
-    const shapeButtons = document.querySelectorAll('.shape-button');
-    shapeButtons.forEach(button => {
-      if (button.dataset.shape === activeShape) {
-        button.style.background = '#667eea';
-        button.style.color = 'white';
-      } else {
-        button.style.background = 'rgba(255,255,255,1)';
-        button.style.color = '#333';
-      }
+    document.querySelectorAll('.shape-button').forEach(button => {
+      button.classList.toggle('active', button.dataset.shape === activeShape);
     });
   }
 
   setupSortControls() {
     const sortButtons = document.querySelectorAll('.sort-button');
     sortButtons.forEach(button => {
-      if (button.dataset.sort === this.sortBy) {
-        button.style.background = '#667eea';
-        button.style.color = 'white';
-      } else {
-        button.style.background = 'rgba(255,255,255,1)';
-        button.style.color = '#333';
+      button.classList.toggle('active', button.dataset.sort === this.sortBy);
+
+      if (!button._sortListenerAttached) {
+        button._sortListenerAttached = true;
+        button.addEventListener('click', () => {
+          const sortBy = button.dataset.sort;
+          this.saveSortBy(sortBy);
+          this.updateSortUI(sortBy);
+        });
       }
-
-      const newBtn = button.cloneNode(true);
-      button.parentNode.replaceChild(newBtn, button);
-
-      newBtn.addEventListener('click', () => {
-        const sortBy = newBtn.dataset.sort;
-        this.saveSortBy(sortBy);
-        this.updateSortUI(sortBy);
-      });
     });
   }
 
   updateSortUI(activeSort) {
-    const sortButtons = document.querySelectorAll('.sort-button');
-    sortButtons.forEach(button => {
-      if (button.dataset.sort === activeSort) {
-        button.style.background = '#667eea';
-        button.style.color = 'white';
-      } else {
-        button.style.background = 'rgba(255,255,255,1)';
-        button.style.color = '#333';
-      }
+    document.querySelectorAll('.sort-button').forEach(button => {
+      button.classList.toggle('active', button.dataset.sort === activeSort);
     });
   }
 
@@ -284,13 +261,7 @@ export class SettingsManager {
     // 初始化 UI 状态
     const updateUIState = () => {
       modeButtons.forEach(btn => {
-        if (btn.dataset.mode === this.bgSettings.mode) {
-          btn.style.background = '#667eea';
-          btn.style.color = 'white';
-        } else {
-          btn.style.background = 'rgba(255,255,255,1)';
-          btn.style.color = '#333';
-        }
+        btn.classList.toggle('active', btn.dataset.mode === this.bgSettings.mode);
       });
 
       if (this.bgSettings.mode === 'custom') {
@@ -306,52 +277,45 @@ export class SettingsManager {
 
     updateUIState();
 
-    // 绑定事件
+    // 绑定事件（仅首次）
     modeButtons.forEach(button => {
-        // Clone to remove old listeners
-        const btn = button.cloneNode(true);
-        button.parentNode.replaceChild(btn, button);
-
-        btn.addEventListener('click', async () => {
-            this.bgSettings.mode = btn.dataset.mode;
-            updateUIState();
-            this.applyBackground();
-            await this.saveBgSettings();
+      if (!button._bgModeListenerAttached) {
+        button._bgModeListenerAttached = true;
+        button.addEventListener('click', async () => {
+          this.bgSettings.mode = button.dataset.mode;
+          updateUIState();
+          this.applyBackground();
+          await this.saveBgSettings();
         });
-    });
-
-    // Handle inputs
-    // We can't easily clone inputs without losing reference, so we'll just add listener
-    // Ideally we should handle cleanup or use a more robust event delegation
-
-    // Remove old listeners by cloning (simple way)
-    const newCustomUrlInput = customUrlInput.cloneNode(true);
-    customUrlInput.parentNode.replaceChild(newCustomUrlInput, customUrlInput);
-
-    newCustomUrlInput.addEventListener('change', async () => {
-      this.bgSettings.customUrl = newCustomUrlInput.value.trim();
-      if (this.bgSettings.mode === 'custom') {
-        this.applyBackground();
-      }
-      await this.saveBgSettings();
-    });
-
-    const newOpacityInput = opacityInput.cloneNode(true);
-    opacityInput.parentNode.replaceChild(newOpacityInput, opacityInput);
-
-    newOpacityInput.addEventListener('input', () => {
-      const val = newOpacityInput.value;
-      opacityValue.textContent = `${val}%`;
-      this.bgSettings.overlayOpacity = parseInt(val);
-      // 实时预览
-      const overlay = document.getElementById('bgOverlay');
-      if (overlay) {
-        overlay.style.backgroundColor = `rgba(0, 0, 0, ${val / 100})`;
       }
     });
 
-    newOpacityInput.addEventListener('change', async () => {
-      await this.saveBgSettings();
-    });
+    if (!customUrlInput._bgListenerAttached) {
+      customUrlInput._bgListenerAttached = true;
+      customUrlInput.addEventListener('change', async () => {
+        this.bgSettings.customUrl = customUrlInput.value.trim();
+        if (this.bgSettings.mode === 'custom') {
+          this.applyBackground();
+        }
+        await this.saveBgSettings();
+      });
+    }
+
+    if (!opacityInput._bgListenerAttached) {
+      opacityInput._bgListenerAttached = true;
+      opacityInput.addEventListener('input', () => {
+        const val = opacityInput.value;
+        opacityValue.textContent = `${val}%`;
+        this.bgSettings.overlayOpacity = parseInt(val);
+        const overlay = document.getElementById('bgOverlay');
+        if (overlay) {
+          overlay.style.backgroundColor = `rgba(0, 0, 0, ${val / 100})`;
+        }
+      });
+
+      opacityInput.addEventListener('change', async () => {
+        await this.saveBgSettings();
+      });
+    }
   }
 }

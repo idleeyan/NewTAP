@@ -1,9 +1,19 @@
+import { iconLibrary } from './js/IconLibrary.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
   const pageTitle = document.getElementById('pageTitle');
   const pageUrl = document.getElementById('pageUrl');
   const addButton = document.getElementById('addButton');
   const openNewtabButton = document.getElementById('openNewtabButton');
   const statusMessage = document.getElementById('statusMessage');
+
+  try {
+    const ver = chrome.runtime.getManifest?.()?.version;
+    if (ver) {
+      const verEl = document.getElementById('popupVersion');
+      if (verEl) verEl.textContent = `v${ver}`;
+    }
+  } catch { /* ignore */ }
   
   let currentTab = null;
   
@@ -47,40 +57,48 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const url = new URL(currentTab.url);
         const domain = url.hostname;
-        const icon = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-        
-        const newBookmark = {
-          id: Date.now().toString(),
-          name: currentTab.title,
-          url: currentTab.url,
-          icon: icon,
-          index: 0,
-          visitCount: 0,
-          lastVisit: Date.now()
-        };
-        
+        // 图库里有该网站的设计 LOGO 就用它，否则退回站点 favicon
+        const preset = iconLibrary.matchByUrl(currentTab.url);
+        const icon = preset ? preset.file : `https://${domain}/favicon.ico`;
+
         const result = await chrome.storage.local.get('customBookmarks');
         const customBookmarks = result.customBookmarks || [];
-        
-        const existingIndex = customBookmarks.findIndex(bookmark => bookmark.url === newBookmark.url);
+
+        const existingIndex = customBookmarks.findIndex(bookmark => bookmark.url === currentTab.url);
         if (existingIndex !== -1) {
           showStatus('error', '该网站已在书签中');
           addButton.classList.remove('loading');
           addButton.disabled = false;
           return;
         }
-        
+
+        const maxIndex = customBookmarks.reduce((max, b) => Math.max(max, b.index || 0), -1);
+
+        const newBookmark = {
+          id: Date.now().toString(),
+          name: currentTab.title,
+          url: currentTab.url,
+          icon: icon,
+          index: maxIndex + 1,
+          visitCount: 0,
+          lastVisit: Date.now(),
+          firstVisit: Date.now()
+        };
+
         customBookmarks.push(newBookmark);
-        await chrome.storage.local.set({ customBookmarks: customBookmarks });
-        
+        await chrome.storage.local.set({
+          customBookmarks: customBookmarks,
+          lastLocalModify: Date.now()
+        });
+
         showStatus('success', '已成功添加到书签！');
-        
+
         setTimeout(() => {
           window.close();
         }, 1500);
       } catch (error) {
         console.error('添加书签失败:', error);
-        showStatus('error', '添加失败，请重试');
+        showStatus('error', '添加失败：' + (error.message || '请重试'));
         addButton.classList.remove('loading');
         addButton.disabled = false;
       }

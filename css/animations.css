@@ -1,7 +1,12 @@
+/* ✨ 动画系统 - 优化版 */
+
+/* 🎬 基础动画定义 */
+
+/* 淡入上移 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -9,6 +14,7 @@
   }
 }
 
+/* 滑动上移 */
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -20,15 +26,21 @@
   }
 }
 
+/* 脉冲注意 */
 @keyframes pulse-attention {
   0%, 100% {
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6), 0 0 0 0 rgba(102, 126, 234, 0.4);
+    box-shadow: 
+      0 4px 20px rgba(102, 126, 234, 0.6),
+      0 0 0 0 rgba(102, 126, 234, 0.4);
   }
   50% {
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6), 0 0 0 8px rgba(102, 126, 234, 0);
+    box-shadow: 
+      0 4px 20px rgba(102, 126, 234, 0.6),
+      0 0 0 8px rgba(102, 126, 234, 0);
   }
 }
 
+/* 轨迹脉冲 */
 @keyframes trackPulse {
   0%, 100% {
     opacity: 0.3;
@@ -40,6 +52,7 @@
   }
 }
 
+/* 圆点脉冲 */
 @keyframes dotPulse {
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);
@@ -51,71 +64,76 @@
   }
 }
 
+/* 数字发光 - 使用透明度变化替代 text-shadow 逐帧重绘，性能更好 */
 @keyframes numberGlow {
-  0%, 100% {
-    text-shadow: 0 0 5px rgba(255, 200, 100, 1),
-                 0 0 15px rgba(255, 200, 100, 0.9),
-                 0 0 30px rgba(255, 200, 100, 0.7);
-  }
-  50% {
-    text-shadow: 0 0 10px rgba(255, 200, 100, 1),
-                 0 0 25px rgba(255, 200, 100, 0.9),
-                 0 0 45px rgba(255, 200, 100, 0.7);
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
 }
 
 @keyframes numberGlowBlue {
-  0%, 100% {
-    text-shadow: 0 0 5px rgba(102, 126, 234, 1),
-                 0 0 15px rgba(102, 126, 234, 0.9),
-                 0 0 30px rgba(102, 126, 234, 0.7);
-  }
-  50% {
-    text-shadow: 0 0 10px rgba(102, 126, 234, 1),
-                 0 0 25px rgba(102, 126, 234, 0.9),
-                 0 0 45px rgba(102, 126, 234, 0.7);
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
 }
 
 @keyframes numberGlowRed {
-  0%, 100% {
-    text-shadow: 0 0 5px rgba(255, 107, 107, 1),
-                 0 0 15px rgba(255, 107, 107, 0.9),
-                 0 0 30px rgba(255, 107, 107, 0.7);
-  }
-  50% {
-    text-shadow: 0 0 10px rgba(255, 107, 107, 1),
-                 0 0 25px rgba(255, 107, 107, 0.9),
-                 0 0 45px rgba(255, 107, 107, 0.7);
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
 }
 
-.bookmark-item.animate-in {
-  animation: fadeInUp 0.25s cubic-bezier(0.05, 0.7, 0.1, 1) forwards;
+/* 📦 书签卡片入场动画 */
+.bookmark-wrapper.animate-in {
+  animation: fadeInUp 350ms cubic-bezier(0.05, 0.7, 0.1, 1) forwards;
   opacity: 0;
 }
 
+/* 更自然的弹性入场 */
+@keyframes fadeInUpSpring {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 🎯 减少动画偏好 - 无障碍 */
 @media (prefers-reduced-motion: reduce) {
-  .bookmark-item.animate-in {
+  .bookmark-wrapper.animate-in {
     animation: none;
     opacity: 1;
     transform: none;
   }
+  
   .compass-glow-track,
   .compass-glow-dot.active,
   .glow-number.active {
     animation: none;
   }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
+/* 🌟 滑动触发区按钮动画 */
 .slide-trigger-zone.left:hover .slide-btn.left {
   animation: pulse-attention 2s ease-in-out infinite;
 }
 
+/* 🔮 指南针背景 - 隐藏 */
 .compass-bg {
   display: none;
 }
 
+/* 📡 指南针时钟 */
 .compass-clock {
   position: relative;
   width: 100%;
@@ -123,6 +141,7 @@
   filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.3));
 }
 
+/* 指南针环 */
 .compass-ring {
   position: absolute;
   top: 50%;
@@ -132,30 +151,37 @@
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 时针环 */
 .compass-hours {
   width: 90%;
   height: 90%;
   border: 2px solid rgba(255, 200, 100, 0.15);
-  box-shadow: 0 0 20px rgba(255, 200, 100, 0.1),
-              inset 0 0 30px rgba(255, 200, 100, 0.05);
+  box-shadow: 
+    0 0 20px rgba(255, 200, 100, 0.1),
+    inset 0 0 30px rgba(255, 200, 100, 0.05);
 }
 
+/* 分针环 */
 .compass-minutes {
   width: 90%;
   height: 90%;
   border: 2px solid rgba(102, 126, 234, 0.15);
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.1),
-              inset 0 0 30px rgba(102, 126, 234, 0.05);
+  box-shadow: 
+    0 0 20px rgba(102, 126, 234, 0.1),
+    inset 0 0 30px rgba(102, 126, 234, 0.05);
 }
 
+/* 秒针环 */
 .compass-seconds {
   width: 90%;
   height: 90%;
   border: 2px solid rgba(255, 107, 107, 0.15);
-  box-shadow: 0 0 20px rgba(255, 107, 107, 0.1),
-              inset 0 0 30px rgba(255, 107, 107, 0.05);
+  box-shadow: 
+    0 0 20px rgba(255, 107, 107, 0.1),
+    inset 0 0 30px rgba(255, 107, 107, 0.05);
 }
 
+/* 指南针数字 */
 .compass-number {
   position: absolute;
   font-size: 40px;
@@ -168,8 +194,7 @@
   color: rgba(255, 255, 255, 1);
   font-size: 52px;
   font-weight: 700;
-  text-shadow: 0 0 15px rgba(255, 255, 255, 0.9),
-               0 0 30px rgba(255, 255, 255, 0.5);
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
 }
 
 .compass-number.nearby {
@@ -177,6 +202,7 @@
   font-size: 44px;
 }
 
+/* 指南针中心 */
 .compass-center {
   position: absolute;
   top: 50%;
@@ -205,6 +231,7 @@
   margin-top: 2px;
 }
 
+/* 指南针标记 */
 .compass-marker {
   position: absolute;
   left: 50%;
@@ -214,8 +241,9 @@
   background: #ff6b6b;
   border-radius: 1px;
   z-index: 10;
-  box-shadow: 0 0 8px rgba(255, 107, 107, 1),
-              0 0 16px rgba(255, 107, 107, 0.6);
+  box-shadow: 
+    0 0 8px rgba(255, 107, 107, 1),
+    0 0 16px rgba(255, 107, 107, 0.6);
 }
 
 .compass-hours .compass-marker {
@@ -236,6 +264,7 @@
   top: 5%;
 }
 
+/* 指南针发光轨迹 */
 .compass-glow-track {
   position: absolute;
   top: 50%;
@@ -243,7 +272,10 @@
   transform: translate(-50%, -50%);
   border-radius: 50%;
   border: 1px solid transparent;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%, rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    transparent 50%, 
+    rgba(255, 255, 255, 0.05) 100%);
   animation: trackPulse 3s ease-in-out infinite;
 }
 
@@ -251,33 +283,39 @@
   width: 85%;
   height: 85%;
   border-color: rgba(255, 200, 100, 0.2);
-  box-shadow: 0 0 20px rgba(255, 200, 100, 0.15),
-              inset 0 0 20px rgba(255, 200, 100, 0.05);
+  box-shadow: 
+    0 0 20px rgba(255, 200, 100, 0.15),
+    inset 0 0 20px rgba(255, 200, 100, 0.05);
 }
 
 .compass-minutes .compass-glow-track {
   width: 85%;
   height: 85%;
   border-color: rgba(102, 126, 234, 0.2);
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.15),
-              inset 0 0 20px rgba(102, 126, 234, 0.05);
+  box-shadow: 
+    0 0 20px rgba(102, 126, 234, 0.15),
+    inset 0 0 20px rgba(102, 126, 234, 0.05);
 }
 
 .compass-seconds .compass-glow-track {
   width: 85%;
   height: 85%;
   border-color: rgba(255, 107, 107, 0.2);
-  box-shadow: 0 0 20px rgba(255, 107, 107, 0.15),
-              inset 0 0 20px rgba(255, 107, 107, 0.05);
+  box-shadow: 
+    0 0 20px rgba(255, 107, 107, 0.15),
+    inset 0 0 20px rgba(255, 107, 107, 0.05);
 }
 
+/* 指南针发光点 */
 .compass-glow-dot {
   position: absolute;
   width: 3%;
   height: 3%;
   min-width: 3px;
   min-height: 3px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%);
+  background: radial-gradient(circle, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.1) 100%);
   border-radius: 50%;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
@@ -288,10 +326,13 @@
   height: 6%;
   min-width: 6px;
   min-height: 6px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(102, 126, 234, 1) 100%);
-  box-shadow: 0 0 10px rgba(102, 126, 234, 1),
-              0 0 20px rgba(102, 126, 234, 0.6),
-              0 0 30px rgba(102, 126, 234, 0.3);
+  background: radial-gradient(circle, 
+    rgba(255, 255, 255, 1) 0%, 
+    rgba(102, 126, 234, 1) 100%);
+  box-shadow: 
+    0 0 10px rgba(102, 126, 234, 1),
+    0 0 20px rgba(102, 126, 234, 0.6),
+    0 0 30px rgba(102, 126, 234, 0.3);
   animation: dotPulse 1.5s ease-in-out infinite;
 }
 
@@ -300,34 +341,13 @@
   height: 4%;
   min-width: 4px;
   min-height: 4px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.8) 0%, rgba(102, 126, 234, 0.3) 100%);
+  background: radial-gradient(circle, 
+    rgba(102, 126, 234, 0.8) 0%, 
+    rgba(102, 126, 234, 0.3) 100%);
   box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
 }
 
-.compass-hours .compass-glow-dot.active {
-  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 200, 100, 1) 100%);
-  box-shadow: 0 0 20px rgba(255, 200, 100, 1),
-              0 0 40px rgba(255, 200, 100, 0.6),
-              0 0 60px rgba(255, 200, 100, 0.3);
-}
-
-.compass-hours .compass-glow-dot.nearby {
-  background: radial-gradient(circle, rgba(255, 200, 100, 0.8) 0%, rgba(255, 200, 100, 0.3) 100%);
-  box-shadow: 0 0 10px rgba(255, 200, 100, 0.5);
-}
-
-.compass-seconds .compass-glow-dot.active {
-  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 107, 107, 1) 100%);
-  box-shadow: 0 0 20px rgba(255, 107, 107, 1),
-              0 0 40px rgba(255, 107, 107, 0.6),
-              0 0 60px rgba(255, 107, 107, 0.3);
-}
-
-.compass-seconds .compass-glow-dot.nearby {
-  background: radial-gradient(circle, rgba(255, 107, 107, 0.8) 0%, rgba(255, 107, 107, 0.3) 100%);
-  box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
-}
-
+/* 时针发光数字 */
 .compass-hours .glow-number {
   font-size: clamp(6px, 1.5vw, 10px);
   font-weight: 500;
@@ -340,9 +360,7 @@
   font-size: clamp(14px, 4vw, 22px);
   font-weight: 700;
   color: #fff;
-  text-shadow: 0 0 5px rgba(255, 200, 100, 1),
-               0 0 15px rgba(255, 200, 100, 0.9),
-               0 0 30px rgba(255, 200, 100, 0.7);
+  text-shadow: 0 0 8px rgba(255, 200, 100, 0.7);
   animation: numberGlow 2s ease-in-out infinite;
 }
 
@@ -350,9 +368,9 @@
   font-size: clamp(8px, 2vw, 12px);
   font-weight: 600;
   color: rgba(255, 200, 100, 0.7);
-  text-shadow: 0 0 4px rgba(255, 200, 100, 0.4);
 }
 
+/* 分针发光数字 */
 .compass-minutes .glow-number {
   font-size: clamp(5px, 1.2vw, 8px);
   font-weight: 500;
@@ -365,9 +383,7 @@
   font-size: clamp(12px, 3.5vw, 18px);
   font-weight: 700;
   color: #fff;
-  text-shadow: 0 0 5px rgba(102, 126, 234, 1),
-               0 0 15px rgba(102, 126, 234, 0.9),
-               0 0 30px rgba(102, 126, 234, 0.7);
+  text-shadow: 0 0 8px rgba(102, 126, 234, 0.7);
   animation: numberGlowBlue 2s ease-in-out infinite;
 }
 
@@ -375,9 +391,9 @@
   font-size: clamp(6px, 1.5vw, 10px);
   font-weight: 600;
   color: rgba(102, 126, 234, 0.7);
-  text-shadow: 0 0 4px rgba(102, 126, 234, 0.4);
 }
 
+/* 秒针发光数字 */
 .compass-seconds .glow-number {
   font-size: clamp(4px, 1vw, 7px);
   font-weight: 500;
@@ -390,9 +406,7 @@
   font-size: clamp(10px, 3vw, 16px);
   font-weight: 700;
   color: #fff;
-  text-shadow: 0 0 5px rgba(255, 107, 107, 1),
-               0 0 15px rgba(255, 107, 107, 0.9),
-               0 0 30px rgba(255, 107, 107, 0.7);
+  text-shadow: 0 0 8px rgba(255, 107, 107, 0.7);
   animation: numberGlowRed 2s ease-in-out infinite;
 }
 
@@ -400,5 +414,368 @@
   font-size: clamp(5px, 1.2vw, 9px);
   font-weight: 600;
   color: rgba(255, 107, 107, 0.7);
-  text-shadow: 0 0 4px rgba(255, 107, 107, 0.4);
+}
+
+/* 🌟 惊艳卡片特效动画 */
+
+/* 粒子光点效果 */
+@keyframes particleFloat {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(0) scale(0);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  90% {
+    opacity: 0.6;
+    transform: translateY(-60px) scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-80px) scale(0);
+  }
+}
+
+/* 霓虹光波效果 */
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 5px rgba(102, 126, 234, 0.5),
+      0 0 10px rgba(102, 126, 234, 0.3),
+      0 0 15px rgba(102, 126, 234, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 10px rgba(102, 126, 234, 0.8),
+      0 0 20px rgba(102, 126, 234, 0.5),
+      0 0 30px rgba(102, 126, 234, 0.3),
+      0 0 40px rgba(102, 126, 234, 0.1);
+  }
+}
+
+/* 光晕旋转效果 */
+@keyframes glowRotate {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* 卡片边缘光效流动 */
+@keyframes borderGlow {
+  0%, 100% {
+    border-color: rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    border-color: rgba(102, 126, 234, 0.8);
+  }
+}
+
+/* 悬浮时粒子上升效果 - 应用于卡片内的装饰元素 */
+.bookmark-card .particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, 
+    rgba(255, 255, 255, 0.8) 0%, 
+    rgba(102, 126, 234, 0.4) 100%);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.bookmark-wrapper:hover .bookmark-card .particle {
+  animation: particleFloat 1.5s ease-out forwards;
+}
+
+/* 为不同粒子设置不同位置和延迟 */
+.bookmark-card .particle:nth-child(1) {
+  top: 20%;
+  left: 20%;
+  animation-delay: 0s;
+}
+
+.bookmark-card .particle:nth-child(2) {
+  top: 30%;
+  right: 25%;
+  animation-delay: 0.2s;
+}
+
+.bookmark-card .particle:nth-child(3) {
+  bottom: 40%;
+  left: 30%;
+  animation-delay: 0.4s;
+}
+
+/* 卡片霓虹光效 */
+.bookmark-card.neon-glow {
+  animation: neonPulse 2s ease-in-out infinite;
+}
+
+/* 卡片光晕旋转背景 */
+.bookmark-card .glow-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(102, 126, 234, 0.1) 25%,
+    transparent 50%,
+    rgba(102, 126, 234, 0.1) 75%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 400ms ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bookmark-wrapper:hover .bookmark-card .glow-ring {
+  opacity: 1;
+  animation: glowRotate 3s linear infinite;
+}
+
+/* 📊 应用惊艳特效的工具类 */
+
+/* 卡片悬浮特效增强 */
+.bookmark-wrapper.enhanced-hover:hover .bookmark-card {
+  animation: neonPulse 2s ease-in-out infinite;
+  border-color: rgba(102, 126, 234, 0.6);
+}
+
+/* 卡片入场弹性动画 */
+.bookmark-wrapper.animate-spring .bookmark-card {
+  animation: fadeInUpSpring 500ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+}
+
+/* 卡片脉冲注意 */
+.bookmark-wrapper.animate-pulse .bookmark-card {
+  animation: pulse-attention 2s ease-in-out infinite;
+}
+
+/* 添加按钮加号呼吸，引导初次用户注意 */
+@keyframes add-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.82; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+/* 🎯 减少动画偏好 - 无障碍 */
+@media (prefers-reduced-motion: reduce) {
+  .bookmark-card .particle,
+  .bookmark-card .glow-ring,
+  .bookmark-card.neon-glow {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  
+  .bookmark-wrapper.enhanced-hover:hover .bookmark-card {
+    animation: none;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 🌟 额外的微动画 */
+
+/* 按钮悬浮时轻微发光 */
+@keyframes buttonGlow {
+  0%, 100% {
+    box-shadow: 
+      0 4px 15px rgba(102, 126, 234, 0.4),
+      0 0 0 0 rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 6px 20px rgba(102, 126, 234, 0.6),
+      0 0 0 4px rgba(102, 126, 234, 0.15);
+  }
+}
+
+/* 卡片悬浮时轻微浮动 */
+@keyframes cardFloat {
+  0%, 100% {
+    transform: translateY(-8px) scale(1.02);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.02);
+  }
+}
+
+/* 加载骨架屏动画 */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* 旋转加载 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--primary-500);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* 淡入 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 淡出 */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* 缩放淡入 */
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 滑动入场 - 从左侧 */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 滑动入场 - 从右侧 */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 弹跳入场 */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 摇晃 */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+/* 应用动画的工具类 */
+.animate-fade-in {
+  animation: fadeIn 350ms ease forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 350ms ease forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 350ms ease forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 350ms ease forwards;
+}
+
+.animate-bounce-in {
+  animation: bounceIn 500ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-pulse {
+  animation: pulse-attention 2s ease-in-out infinite;
+}
+
+/* 减少动画偏好 - 再次确认 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-in-up,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-bounce-in,
+  .animate-pulse {
+    animation: none;
+  }
 }

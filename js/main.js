@@ -6,6 +6,7 @@ import { UIManager } from './UIManager.js';
 import { WebDAVSyncManager, AutoSyncManager } from './sync/index.js';
 import { BackupManager } from './BackupManager.js';
 import { StickyNoteManager } from './StickyNoteManager.js';
+import { iconCache } from './IconCache.js';
 
 class App {
   constructor() {
@@ -29,24 +30,73 @@ class App {
   }
 
   async init() {
-    // Load all data
-    await this.bookmarkManager.loadBookmarks();
-    await this.settingsManager.init(); // Loads sizes, shapes, bg
-    await this.webdavSyncManager.loadConfig();
-    await this.autoSyncManager.loadConfig();
-    await this.backupManager.init(); // Auto backup check
-    await this.stickyNoteManager.init(); // Load sticky notes
+    // 阶段1：只加载渲染卡片必需的数据，不包含图标缓存/同步配置
+    await Promise.all([
+      this.bookmarkManager.loadBookmarks(),
+      this.settingsManager.init(),
+    ]);
 
-    // Initialize UI
+    // 阶段2：立即渲染首屏，用户尽快看到网站卡片
     this.settingsManager.setupUI();
     this.uiManager.init();
     this.uiManager.renderBookmarks();
 
-    // Setup Sync UI interactions (bridging UI and SyncManager)
-    this.setupSyncUI();
+    // 阶段3：非关键路径后台执行，完成后按需刷新
+    this._deferredInit();
+  }
 
-    // Start Auto Sync
-    this.startAutoSync();
+  /** 首屏之后再补齐图标缓存、同步配置与后台任务 */
+  async _deferredInit() {
+    try {
+      await Promise.all([
+        this.webdavSyncManager.loadConfig(),
+        this.autoSyncManager.loadConfig(),
+        iconCache.init(),
+      ]);
+      this.setupSyncUI();
+
+      // 等图标缓存进内存后刷新一次，让已缓存的 data URI 立即显示
+      await iconCache.populateCache(this._getIconUrls());
+      this.uiManager.bookmarkRenderer._lastRenderKey = '';
+      this.uiManager.renderBookmarks();
+    } catch (e) {
+      console.warn('[App] 延迟初始化失败', e);
+    }
+
+    try {
+      await this.stickyNoteManager.init();
+    } catch (e) { /* 忽略 */ }
+    try {
+      await this.backupManager.init();
+    } catch (e) { /* 忽略 */ }
+    try {
+      this.startAutoSync();
+    } catch (e) { /* 忽略 */ }
+
+    // 后台预加载未缓存的图标，完成后刷新渲染显示新缓存的图标
+    setTimeout(() => this._preloadIcons(), 200);
+  }
+
+  /** 收集当前书签的图标 URL 列表 */
+  _getIconUrls() {
+    return (this.bookmarkManager.bookmarks || [])
+      .map(b => b.icon)
+      .filter(u => u && !u.startsWith('data:'));
+  }
+
+  /** 后台批量预加载未缓存的图标，完成后触发重渲染 */
+  async _preloadIcons() {
+    try {
+      const items = (this.bookmarkManager.bookmarks || [])
+        .map(b => ({ icon: b.icon, url: b.url }))
+        .filter(i => i.icon && !i.icon.startsWith('data:'));
+      const changed = await iconCache.preloadBatch(items);
+      if (changed) {
+        // 有新图标被缓存，触发重渲染以显示缓存图标
+        this.uiManager.bookmarkRenderer._lastRenderKey = '';
+        this.uiManager.renderBookmarks();
+      }
+    } catch (e) { /* 忽略 */ }
   }
 
   setupSyncUI() {
@@ -120,11 +170,49 @@ class App {
 
             if (interval < 5) { alert('最小间隔5分钟'); return; }
 
-            await this.autoSyncManager.saveConfig({ enabled, interval, syncOnStart });
-            this.autoSyncManager.start();
-            this.updateWebDAVStatus(); // refreshes UI
-            alert('自动同步设置已保存');
+            const result = await this.autoSyncManager.saveConfig({ enabled, interval, syncOnStart });
+            if (result && result.success) {
+                this.updateWebDAVStatus(); // 刷新 UI（saveConfig 内部已根据 enabled 调用 start/stop）
+                alert('自动同步设置已保存');
+            } else {
+                const err = (result && result.error) || '未知错误';
+                console.error('[AutoSync] 保存失败:', err);
+                alert('保存失败：' + err + '\n\n请打开控制台(F12)查看 [AutoSync] 日志，并反馈详细信息。');
+            }
         });
+    }
+
+    // 监听 storage 变更，捕捉任何对 autoSyncConfig 的意外覆盖（辅助定位“刷新后丢失”类问题）
+    if (!chrome.storage._autoSyncChangeMonitored) {
+      chrome.storage._autoSyncChangeMonitored = true;
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local') return;
+
+        if (changes.autoSyncConfig) {
+          console.log('[AutoSync] storage.onChanged 检测到 autoSyncConfig 被修改',
+            { 旧值: changes.autoSyncConfig.oldValue, 新值: changes.autoSyncConfig.newValue });
+        }
+
+        // 当 customBookmarks 被外部修改（如 popup 添加书签、WebDAV 同步下载/合并）时，
+        // 重新加载内存数据并刷新 UI。必须比较名称/图标，不能只比 URL 列表——
+        // 换 logo 时 URL 不变，否则跨端同步后卡片不会更新。
+        if (changes.customBookmarks && !this._reloading) {
+          const oldArr = changes.customBookmarks.oldValue || [];
+          const newArr = changes.customBookmarks.newValue || [];
+          const sig = (arr) => (arr || [])
+            .map(b => `${b.url}|${b.name || ''}|${b.icon || ''}|${b.index || 0}`)
+            .sort()
+            .join('\n');
+          if (sig(oldArr) !== sig(newArr)) {
+            console.log('[Bookmark] 检测到外部修改 customBookmarks（含名称/图标），重新加载（防抖）');
+            if (this._reloadTimer) clearTimeout(this._reloadTimer);
+            this._reloadTimer = setTimeout(() => {
+              this._reloading = true;
+              this.reloadAllData().finally(() => { this._reloading = false; this._reloadTimer = null; });
+            }, 300);
+          }
+        }
+      });
     }
   }
 
@@ -218,6 +306,9 @@ class App {
       btn.textContent = '上传到云端'; // Reset text (simplified) or '智能同步'
 
       if (result.success) {
+          if (result.localUpdated) {
+            await this.reloadAllData();
+          }
           alert('同步成功');
           this.updateWebDAVStatus();
       } else {
@@ -238,14 +329,17 @@ class App {
 
   async startAutoSync() {
       this.autoSyncManager.setOnSyncComplete(async (result) => {
-          await this.reloadAllData();
-          console.log('定时自动同步完成，UI已刷新');
+          // 同步后只要本地被更新（下载/合并/图标物化）都刷新，不能只看 direction
+          if (result && result.success && result.localUpdated !== false) {
+            await this.reloadAllData();
+          } else if (result && result.success && result.direction === 'download') {
+            await this.reloadAllData();
+          }
       });
       this.autoSyncManager.start();
       const result = await this.autoSyncManager.syncOnStartIfEnabled();
-      if (result.success && result.direction === 'download') {
+      if (result.success && (result.direction === 'download' || result.localUpdated)) {
           await this.reloadAllData();
-          console.log('启动时自动同步完成');
       }
   }
 
@@ -253,11 +347,17 @@ class App {
       await this.bookmarkManager.loadBookmarks();
       await this.settingsManager.init();
       await this.stickyNoteManager.loadNotes();
+      // 重新加载后预填充图标缓存（WebDAV 同步可能改变了书签列表）
+      await iconCache.populateCache(this._getIconUrls());
+      // 强制重建卡片，确保换 logo 后立即可见
+      this.uiManager.bookmarkRenderer.invalidate();
       this.uiManager.renderBookmarks();
       if (this.uiManager.isNotesPageOpen) {
           this.uiManager.renderNotes();
       }
       this.updateWebDAVStatus();
+      // 后台预加载新增的未缓存图标
+      setTimeout(() => this._preloadIcons(), 0);
   }
 }
 

@@ -3,14 +3,10 @@ async function handleWebDAVRequest(request) {
     const { config, method, path = '', data = null } = request;
     const { serverUrl, username, password } = config;
 
-    console.log('WebDAV请求:', method, path, '到', serverUrl);
-
     // 确保服务器URL不以斜杠结尾，路径以斜杠开头
     const baseUrl = serverUrl.replace(/\/$/, '');
     const fullPath = path.startsWith('/') ? path : '/' + path;
     const url = baseUrl + fullPath;
-
-    console.log('完整URL:', url);
 
     const credentials = btoa(`${username}:${password}`);
     const headers = {
@@ -38,14 +34,9 @@ async function handleWebDAVRequest(request) {
 
         if (data && (method === 'PUT' || method === 'POST')) {
             fetchOptions.body = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-            console.log('请求体长度:', fetchOptions.body.length);
         }
 
-        console.log('发送请求:', method, url);
-        console.log('请求头部:', JSON.stringify(headers));
         const response = await fetch(url, fetchOptions);
-        console.log('响应状态:', response.status, response.statusText);
-        console.log('响应头部:', JSON.stringify(Object.fromEntries(response.headers)));
 
         if (method === 'GET') {
             const responseData = await response.text();
@@ -94,13 +85,39 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         searchLogoFromBaidu(searchTerm, sendResponse);
         return true;
     }
-    
+
+    // 代理获取图片并转为 data URI 返回
+    // 规避前端 <img> 在扩展环境下加载外部图源的各类失败（Referer/Sec-Fetch/防盗链等）
+    if (request.action === 'fetchLogoImage') {
+        const url = request.url;
+        if (!url) { sendResponse({ success: false, error: 'url required' }); return true; }
+        fetch(url)
+            .then(r => r.blob())
+            .then(async blob => {
+                const buf = await blob.arrayBuffer();
+                // MV3 service worker 无 FileReader，手动分块转 base64
+                let binary = '';
+                const bytes = new Uint8Array(buf);
+                const chunk = 0x8000;
+                for (let i = 0; i < bytes.length; i += chunk) {
+                    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+                }
+                const base64 = btoa(binary);
+                sendResponse({ success: true, dataUri: `data:${blob.type || 'image/jpeg'};base64,${base64}` });
+            })
+            .catch(err => {
+                console.log('[LogoProxy] 代理抓图失败:', String(url).slice(0, 100), '|', err.message);
+                sendResponse({ success: false, error: err.message });
+            });
+        return true;
+    }
+
     // 处理WebDAV请求
     if (request.action === 'webdav') {
         handleWebDAVRequest(request).then(sendResponse);
         return true;
     }
-    
+
     // 默认返回false
     return false;
 });
@@ -118,7 +135,8 @@ function searchLogoFromBaidu(searchTerm, sendResponse) {
             let match;
             let count = 0;
             
-            while ((match = regex.exec(html)) && count < 20) {
+            // 百度图床对 Chrome 扩展环境请求不稳定（ERR_CONNECTION_CLOSED），限量后置以减少影响
+            while ((match = regex.exec(html)) && count < 8) {
                 try {
                     const logoUrl = match[1];
                     if (logoUrl) {
@@ -130,8 +148,6 @@ function searchLogoFromBaidu(searchTerm, sendResponse) {
                     console.error('解析图片项失败:', error);
                 }
             }
-            
-            console.log('百度图片搜索结果:', logoItems);
             
             // 继续搜索搜狗图片，合并结果
             searchLogoFromSogou(searchTerm, sendResponse, logoItems);
@@ -168,8 +184,6 @@ function searchLogoFromSogou(searchTerm, sendResponse, existingItems = []) {
                     console.error('解析搜狗图片项失败:', error);
                 }
             }
-            
-            console.log('搜狗图片搜索结果:', logoItems);
             
             // 继续搜索必应图片，合并结果
             searchLogoFromBing(searchTerm, sendResponse, logoItems);
@@ -211,8 +225,6 @@ function searchLogoFromBing(searchTerm, sendResponse, existingItems = []) {
                     console.error('解析必应图片项失败:', error);
                 }
             }
-            
-            console.log('必应图片搜索结果数量:', count);
             
             // 返回合并后的结果
             sendResponse({ success: true, items: logoItems });
